@@ -1,1 +1,18 @@
-{"name":"КПЦ Симбирск — ориентировка","short_name":"Ориентировка","description":"Офлайн-генератор ориентировок КПЦ Симбирск","start_url":"./","scope":"./","display":"standalone","background_color":"#f4f4f5","theme_color":"#b90000","lang":"ru","icons":[{"src":"icon-192.png","sizes":"192x192","type":"image/png"},{"src":"icon-512.png","sizes":"512x512","type":"image/png"}]}
+{
+  "name": "КПЦ Симбирск — ориентировка",
+  "short_name": "Ориентировка",
+  "description": "Офлайн-генератор ориентировок КПЦ Симбирск",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f2f3f5",
+  "theme_color": "#b90000",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
