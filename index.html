@@ -24,52 +24,32 @@
 
 <main class="layout">
   <section class="card form-card">
-    <div class="section">
-      <h2>Человек</h2>
-      <div class="grid">
-        <label>Фамилия<input id="lastName" autocomplete="family-name" placeholder="Иванов"></label>
-        <label>Имя и отчество<input id="firstMiddleName" placeholder="Иван Иванович"></label>
-        <label>Возраст<input id="age" inputmode="text" placeholder="35 лет (1989 г.р.)"></label>
-        <label>Дата пропажи<input id="date" type="date"></label>
-        <label class="full">Место пропажи<textarea id="place" placeholder="г. Ульяновск, Засвияжский район"></textarea></label>
-      </div>
-    </div>
-
-    <div class="section">
-      <h2>Приметы</h2>
-      <div class="grid">
-        <label>Рост<input id="height" placeholder="175 см"></label>
-        <label>Телосложение<input id="build" placeholder="среднее"></label>
-        <label>Волосы<input id="hair" placeholder="тёмно-русые, короткие"></label>
-        <label>Глаза<input id="eyes" placeholder="карие"></label>
-        <label class="full">Особые приметы<textarea id="special" placeholder="шрам на правой брови"></textarea></label>
-      </div>
-    </div>
-
-    <div class="section">
-      <h2>Был одет</h2>
-      <div class="grid">
-        <label>Куртка<input id="jacket" placeholder="тёмно-серая"></label>
-        <label>Брюки<input id="pants" placeholder="джинсы, тёмные"></label>
-        <label>Обувь<input id="shoes" placeholder="кроссовки чёрные"></label>
-        <label>При себе<input id="carrying" placeholder="чёрный рюкзак"></label>
-      </div>
-    </div>
-
-    <div class="section">
-      <h2>Фото</h2>
-      <div class="photo-picker">
-        <input id="photo" type="file" accept="image/jpeg,image/png,image/webp" capture="environment">
-        <img id="photoThumb" alt="" hidden>
-        <p>Фото хранится только на этом устройстве, пока вы сами не отправите готовый файл.</p>
-      </div>
-    </div>
-
-    <div class="section">
-      <h2>Актуальность</h2>
-      <label>Актуально на<input id="actual" type="date"></label>
-    </div>
-
+    <div class="section"><h2>Человек</h2><div class="grid">
+      <label>Фамилия<input id="lastName" autocomplete="family-name" placeholder="Иванов"></label>
+      <label>Имя и отчество<input id="firstMiddleName" placeholder="Иван Иванович"></label>
+      <label>Возраст<input id="age" inputmode="text" placeholder="35 лет (1989 г.р.)"></label>
+      <label>Дата пропажи<input id="date" type="date"></label>
+      <label class="full">Место пропажи<textarea id="place" placeholder="г. Ульяновск, Засвияжский район"></textarea></label>
+    </div></div>
+    <div class="section"><h2>Приметы</h2><div class="grid">
+      <label>Рост<input id="height" placeholder="175 см"></label>
+      <label>Телосложение<input id="build" placeholder="среднее"></label>
+      <label>Волосы<input id="hair" placeholder="тёмно-русые, короткие"></label>
+      <label>Глаза<input id="eyes" placeholder="карие"></label>
+      <label class="full">Особые приметы<textarea id="special" placeholder="шрам на правой брови"></textarea></label>
+    </div></div>
+    <div class="section"><h2>Был одет</h2><div class="grid">
+      <label>Куртка<input id="jacket" placeholder="тёмно-серая"></label>
+      <label>Брюки<input id="pants" placeholder="джинсы, тёмные"></label>
+      <label>Обувь<input id="shoes" placeholder="кроссовки чёрные"></label>
+      <label>При себе<input id="carrying" placeholder="чёрный рюкзак"></label>
+    </div></div>
+    <div class="section"><h2>Фото</h2><div class="photo-picker">
+      <input id="photo" type="file" accept="image/jpeg,image/png,image/webp" capture="environment">
+      <img id="photoThumb" alt="" hidden>
+      <p>Фото хранится только на этом устройстве, пока вы сами не отправите готовый файл.</p>
+    </div></div>
+    <div class="section"><h2>Актуальность</h2><label>Актуально на<input id="actual" type="date"></label></div>
     <div class="actions">
       <button id="previewBtn" class="secondary">Обновить предпросмотр</button>
       <button id="pdfBtn" class="primary">Создать PDF</button>
@@ -77,18 +57,11 @@
     </div>
     <p id="message" class="message"></p>
   </section>
-
   <section class="card preview-card">
-    <div class="preview-head">
-      <h2>Предпросмотр</h2>
-      <span>A4</span>
-    </div>
-    <div class="poster-shell">
-      <canvas id="poster" width="1024" height="1536" aria-label="Предпросмотр ориентировки"></canvas>
-    </div>
+    <div class="preview-head"><h2>Предпросмотр</h2><span>A4</span></div>
+    <div class="poster-shell"><canvas id="poster" width="1024" height="1536" aria-label="Предпросмотр ориентировки"></canvas></div>
   </section>
 </main>
-
-<script src="app.js"></script>
+<script src="app-v4.js"></script>
 </body>
 </html>
