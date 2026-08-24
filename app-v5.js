@@ -166,6 +166,7 @@ function stopUsersSubscription(){if(unsubscribeUsers){unsubscribeUsers();unsubsc
 function subscribeCases(){if(unsubscribeCases)return;unsubscribeCases=onSnapshot(query(collection(db,'cases'),orderBy('createdAt','desc')),snapshot=>{posterUrls.forEach(URL.revokeObjectURL);posterUrls=[];savedCases=snapshot.docs.map(entry=>{const data=entry.data(),posterBytes=data.poster?.toUint8Array?.()||new Uint8Array();const poster=posterBytes.length?URL.createObjectURL(new Blob([posterBytes],{type:'image/jpeg'})):'';if(poster)posterUrls.push(poster);return{id:entry.id,...data,poster,posterBytes,createdAt:data.createdAt?.toMillis?.()||0,archivedAtMs:data.archivedAt?.toMillis?.()||0}});renderMenu();if(currentCaseId){const current=savedCases.find(item=>item.id===currentCaseId);if(current?.archiveUrl)showCreation(true);else if(current)openCase(currentCaseId);else showHome(true)}else route();maybeOpenSharedTracks()},error=>{console.error(error);$('message').textContent='Не удалось загрузить общие ориентировки.'})}
 function subscribeUsers(){if(unsubscribeUsers)return;usersSubscriptionMode=currentIsAdmin()?'admin':'member';const source=usersSubscriptionMode==='admin'?collection(db,'users'):query(collection(db,'users'),where('approved','==',true));unsubscribeUsers=onSnapshot(source,snapshot=>{profilePhotoUrls.forEach(URL.revokeObjectURL);profilePhotoUrls=[];const users=snapshot.docs.map(entry=>{const user={id:entry.id,...entry.data()},bytes=profileBytes(user);if(bytes.length){user.photoUrl=URL.createObjectURL(new Blob([bytes],{type:user.photoType||'image/jpeg'}));profilePhotoUrls.push(user.photoUrl)}return user}).sort((a,b)=>Number(a.approved)-Number(b.approved)||String(a.displayName).localeCompare(String(b.displayName),'ru'));userProfiles=new Map(users.map(user=>[user.id,user]));renderNotes();renderTracks();if(currentIsAdmin()){renderUsers(users);const pending=users.filter(user=>!user.approved).length;$('pendingUsersCount').textContent=String(pending);$('pendingUsersCount').hidden=pending===0}else $('pendingUsersCount').hidden=true},error=>console.error(error))}
 function adminShieldIcon(){const namespace='http://www.w3.org/2000/svg',icon=document.createElementNS(namespace,'svg'),shield=document.createElementNS(namespace,'path'),check=document.createElementNS(namespace,'path');icon.setAttribute('viewBox','0 0 24 24');icon.setAttribute('aria-hidden','true');shield.setAttribute('d','M20 13c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V5l8-3 8 3Z');check.setAttribute('d','m9 12 2 2 4-4');icon.append(shield,check);return icon}
+function approveIcon(){const namespace='http://www.w3.org/2000/svg',icon=document.createElementNS(namespace,'svg'),check=document.createElementNS(namespace,'path');icon.setAttribute('viewBox','0 0 24 24');icon.setAttribute('aria-hidden','true');check.setAttribute('d','m5 12 4 4L19 6');icon.append(check);return icon}
 function trashIcon(){const namespace='http://www.w3.org/2000/svg',icon=document.createElementNS(namespace,'svg'),lid=document.createElementNS(namespace,'path'),bin=document.createElementNS(namespace,'path'),lines=document.createElementNS(namespace,'path');icon.setAttribute('viewBox','0 0 24 24');icon.setAttribute('aria-hidden','true');lid.setAttribute('d','M3 6h18');bin.setAttribute('d','M8 6V4h8v2m3 0-1 15H6L5 6');lines.setAttribute('d','M10 11v6m4-6v6');icon.append(lid,bin,lines);return icon}
 function renderUsers(users){
   const list=$('usersList'),owner=currentIsOwner();
@@ -192,8 +193,13 @@ function renderUsers(users){
       if(user.role==='member'){
         const access=document.createElement('button');
         access.type='button';
-        access.className=user.approved?'ghost small':'primary small';
-        access.textContent=user.approved?'Закрыть доступ':'Подтвердить';
+        access.className=user.approved?'ghost small':'pending-approve';
+        if(user.approved)access.textContent='Закрыть доступ';
+        else{
+          access.title='Подтвердить пользователя';
+          access.setAttribute('aria-label',`Подтвердить пользователя ${user.displayName||user.email||'Без имени'}`);
+          access.append(approveIcon());
+        }
         access.onclick=async()=>{access.disabled=true;try{await updateDoc(doc(db,'users',user.id),{approved:!user.approved})}catch(error){console.error(error);access.disabled=false}};
         state.append(access);
         if(!user.approved){
@@ -207,7 +213,7 @@ function renderUsers(users){
           state.append(remove);
         }
       }
-      if(owner){
+      if(owner&&(user.approved||user.role==='admin')){
         const role=document.createElement('button');
         role.type='button';
         role.className=user.role==='admin'?'demote-admin small':'secondary small';

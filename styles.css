@@ -163,6 +163,8 @@
 .demote-admin{background:#fff0d9;color:#855000;border:1px solid #e6bd7b}
 .demote-admin:hover{background:#ffe4b8;border-color:#d9a34e}
 .users-message{min-height:18px;margin:0 0 7px!important;color:#8f0000!important;font-size:12px!important}
+.pending-approve{display:grid;place-items:center;width:36px;height:36px;padding:0;background:#e5f5e9;color:#23713a;border:1px solid #b8ddc2}
+.pending-approve:hover{background:#d3eed9;border-color:#8fcba0}.pending-approve svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 .pending-delete{display:grid;place-items:center;width:36px;height:36px;padding:0;background:#f7e9e9;color:#8d3030;border:1px solid #e8caca}
 .pending-delete:hover{background:#f1d8d8;border-color:#dbaaaa}.pending-delete svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
@@ -184,8 +186,8 @@
   .user-state{display:grid;grid-template-columns:1fr}
   .user-state button{width:100%;white-space:normal}
   .approval{justify-self:start}
-  .user-row-pending .user-state{grid-template-columns:auto minmax(0,1fr) 42px;align-items:center}
-  .user-row-pending .pending-delete{width:42px;height:42px}
+  .user-row-pending .user-state{grid-template-columns:minmax(0,1fr) 42px 42px;align-items:center;gap:8px}
+  .user-row-pending .pending-approve,.user-row-pending .pending-delete{width:42px;height:42px}
 }
 
 .notes-section{margin-top:26px;padding-top:22px;border-top:1px solid #dedee2}
