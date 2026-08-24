@@ -149,5 +149,33 @@ service cloud.firestore {
           || admin()
         );
     }
+
+    match /tracks/{trackId} {
+      allow read: if approved();
+      allow create: if approved()
+        && request.resource.data.keys().hasOnly([
+          'caseId', 'fileName', 'fileSize', 'mimeType', 'driveFileId', 'url',
+          'authorId', 'authorName', 'authorEmail', 'createdAt'
+        ])
+        && exists(/databases/$(database)/documents/cases/$(request.resource.data.caseId))
+        && get(/databases/$(database)/documents/cases/$(request.resource.data.caseId)).data.status == 'active'
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.authorEmail == request.auth.token.email
+        && request.resource.data.fileName is string
+        && request.resource.data.fileName.size() >= 5
+        && request.resource.data.fileName.size() <= 200
+        && request.resource.data.fileSize is int
+        && request.resource.data.fileSize > 0
+        && request.resource.data.fileSize <= 15728640
+        && request.resource.data.mimeType is string
+        && request.resource.data.mimeType.size() <= 120
+        && request.resource.data.driveFileId is string
+        && request.resource.data.driveFileId.size() <= 200
+        && request.resource.data.url.matches('https://drive\\.google\\.com/.*')
+        && request.resource.data.authorName.size() <= 120;
+      allow update: if false;
+      allow delete: if approved()
+        && (resource.data.authorId == request.auth.uid || admin());
+    }
   }
 }

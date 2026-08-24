@@ -3,6 +3,8 @@ const FIREBASE_PROJECT_ID = 'kpc-simbirsk';
 const FIREBASE_API_KEY = 'AIzaSyDVNnz42UmNSFjyJK4AzsneHEw4ljt53gA';
 const SITE_ORIGIN = 'https://lidia932.github.io';
 const MAX_PDF_BYTES = 35 * 1024 * 1024;
+const MAX_TRACK_BYTES = 15 * 1024 * 1024;
+const TRACKS_FOLDER_NAME = 'Треки активных поисков';
 
 function doGet() {
   return HtmlService.createHtmlOutput('KPC archive uploader is ready.');
@@ -12,13 +14,35 @@ function doPost(event) {
   const parameters = event && event.parameter ? event.parameter : {};
   const nonce = cleanText_(parameters.nonce, 120);
   const action = cleanText_(parameters.action, 40);
-  const responseType = action === 'deleteAuthUser' ? 'kpc-user-delete' : 'kpc-drive-archive';
+  const responseTypes = {
+    deleteAuthUser: 'kpc-user-delete',
+    uploadTrack: 'kpc-track-upload',
+    deleteTrack: 'kpc-track-delete'
+  };
+  const responseType = responseTypes[action] || 'kpc-drive-archive';
 
   try {
     const idToken = cleanText_(parameters.idToken, 10000);
     const user = verifyFirebaseUser_(idToken);
+    const profile = getFirebaseProfile_(idToken, user.localId);
 
-    if (!isArchiveAdmin_(idToken, user.localId)) {
+    if (action === 'uploadTrack') {
+      if (!profile || profile.approved !== true) {
+        throw new Error('Доступ к загрузке треков не подтвержден.');
+      }
+      const track = saveTrack_(parameters, idToken, user, profile);
+      return responsePage_({type: responseType, nonce: nonce, ok: true, track: track});
+    }
+
+    if (action === 'deleteTrack') {
+      if (!profile || profile.approved !== true) {
+        throw new Error('Доступ к удалению треков не подтвержден.');
+      }
+      deleteTrack_(cleanId_(parameters.trackId), idToken, user.localId, profile.role === 'admin');
+      return responsePage_({type: responseType, nonce: nonce, ok: true});
+    }
+
+    if (!profile || profile.approved !== true || profile.role !== 'admin') {
       throw new Error('Действие доступно только администраторам.');
     }
 
@@ -87,11 +111,6 @@ function verifyFirebaseUser_(idToken) {
   return user;
 }
 
-function isArchiveAdmin_(idToken, userId) {
-  const profile = getFirebaseProfile_(idToken, userId);
-  return profile && profile.approved === true && profile.role === 'admin';
-}
-
 function getFirebaseProfile_(idToken, userId) {
   const url = 'https://firestore.googleapis.com/v1/projects/' + FIREBASE_PROJECT_ID
     + '/databases/(default)/documents/users/' + encodeURIComponent(userId);
@@ -107,8 +126,158 @@ function getFirebaseProfile_(idToken, userId) {
   const fields = document.fields || {};
   return {
     approved: fields.approved ? fields.approved.booleanValue === true : null,
-    role: fields.role ? fields.role.stringValue : ''
+    role: fields.role ? fields.role.stringValue : '',
+    displayName: fields.displayName ? fields.displayName.stringValue : '',
+    email: fields.email ? fields.email.stringValue : ''
   };
+}
+
+function saveTrack_(parameters, idToken, user, profile) {
+  const caseId = cleanId_(parameters.caseId);
+  const trackId = cleanId_(parameters.trackId);
+  const fileName = cleanTrackFileName_(parameters.fileName);
+  const mimeType = cleanTrackMimeType_(parameters.fileType);
+  const bytes = decodeTrack_(parameters.fileBase64);
+  const caseDocument = getFirestoreDocument_(idToken, 'cases', caseId);
+  const caseStatus = firestoreString_(caseDocument, 'status');
+
+  if (!caseDocument || caseStatus !== 'active') {
+    throw new Error('Треки можно добавлять только в активный поиск.');
+  }
+
+  const folder = getTrackCaseFolder_(caseId);
+  const file = folder.createFile(Utilities.newBlob(bytes, mimeType, fileName));
+  const track = {
+    id: trackId,
+    caseId: caseId,
+    fileName: fileName,
+    fileSize: bytes.length,
+    mimeType: mimeType,
+    driveFileId: file.getId(),
+    url: file.getUrl(),
+    authorId: user.localId,
+    authorName: cleanText_(profile.displayName || user.displayName || user.email || 'Пользователь', 120),
+    authorEmail: user.email || profile.email || '',
+    createdAt: new Date().toISOString()
+  };
+
+  try {
+    createTrackDocument_(idToken, track);
+  } catch (error) {
+    try {
+      file.setTrashed(true);
+    } catch (cleanupError) {
+      console.error('Track cleanup failed: ' + cleanupError);
+    }
+    throw error;
+  }
+  return track;
+}
+
+function deleteTrack_(trackId, idToken, userId, isAdmin) {
+  const document = getFirestoreDocument_(idToken, 'tracks', trackId);
+  if (!document) return;
+  const authorId = firestoreString_(document, 'authorId');
+  if (!isAdmin && authorId !== userId) {
+    throw new Error('Удалять можно только собственные треки.');
+  }
+
+  const driveFileId = firestoreString_(document, 'driveFileId');
+  if (driveFileId) {
+    try {
+      DriveApp.getFileById(driveFileId).setTrashed(true);
+    } catch (error) {
+      console.error('Track file delete failed: ' + error);
+    }
+  }
+
+  const response = UrlFetchApp.fetch(firestoreDocumentUrl_('tracks', trackId), {
+    method: 'delete',
+    headers: {Authorization: 'Bearer ' + idToken},
+    muteHttpExceptions: true
+  });
+  if (response.getResponseCode() !== 200 && response.getResponseCode() !== 404) {
+    console.error('Track metadata delete failed: ' + response.getResponseCode() + ' ' + response.getContentText());
+    throw new Error('Не удалось удалить карточку трека.');
+  }
+}
+
+function getTrackCaseFolder_(caseId) {
+  const properties = PropertiesService.getScriptProperties();
+  const propertyKey = 'track_folder_' + caseId;
+  const savedFolderId = properties.getProperty(propertyKey);
+  if (savedFolderId) {
+    try {
+      return DriveApp.getFolderById(savedFolderId);
+    } catch (error) {
+      properties.deleteProperty(propertyKey);
+    }
+  }
+
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(30000)) throw new Error('Загрузчик треков занят. Повторите через несколько секунд.');
+  try {
+    const concurrentFolderId = properties.getProperty(propertyKey);
+    if (concurrentFolderId) return DriveApp.getFolderById(concurrentFolderId);
+    const archiveFolder = DriveApp.getFolderById(ARCHIVE_FOLDER_ID);
+    const tracksFolders = archiveFolder.getFoldersByName(TRACKS_FOLDER_NAME);
+    const tracksFolder = tracksFolders.hasNext() ? tracksFolders.next() : archiveFolder.createFolder(TRACKS_FOLDER_NAME);
+    const caseFolder = tracksFolder.createFolder(caseId);
+    properties.setProperty(propertyKey, caseFolder.getId());
+    return caseFolder;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function createTrackDocument_(idToken, track) {
+  const fields = {
+    caseId: {stringValue: track.caseId},
+    fileName: {stringValue: track.fileName},
+    fileSize: {integerValue: String(track.fileSize)},
+    mimeType: {stringValue: track.mimeType},
+    driveFileId: {stringValue: track.driveFileId},
+    url: {stringValue: track.url},
+    authorId: {stringValue: track.authorId},
+    authorName: {stringValue: track.authorName},
+    authorEmail: {stringValue: track.authorEmail},
+    createdAt: {timestampValue: track.createdAt}
+  };
+  const response = UrlFetchApp.fetch(firestoreDocumentUrl_('tracks', track.id), {
+    method: 'patch',
+    contentType: 'application/json',
+    headers: {Authorization: 'Bearer ' + idToken},
+    payload: JSON.stringify({fields: fields}),
+    muteHttpExceptions: true
+  });
+  if (response.getResponseCode() !== 200) {
+    console.error('Track metadata save failed: ' + response.getResponseCode() + ' ' + response.getContentText());
+    throw new Error('Не удалось сохранить карточку трека.');
+  }
+}
+
+function getFirestoreDocument_(idToken, collectionName, documentId) {
+  const response = UrlFetchApp.fetch(firestoreDocumentUrl_(collectionName, documentId), {
+    method: 'get',
+    headers: {Authorization: 'Bearer ' + idToken},
+    muteHttpExceptions: true
+  });
+  if (response.getResponseCode() === 404) return null;
+  if (response.getResponseCode() !== 200) {
+    throw new Error('Не удалось проверить данные активного поиска.');
+  }
+  return JSON.parse(response.getContentText());
+}
+
+function firestoreDocumentUrl_(collectionName, documentId) {
+  return 'https://firestore.googleapis.com/v1/projects/' + FIREBASE_PROJECT_ID
+    + '/databases/(default)/documents/' + encodeURIComponent(collectionName)
+    + '/' + encodeURIComponent(documentId);
+}
+
+function firestoreString_(document, fieldName) {
+  const field = document && document.fields ? document.fields[fieldName] : null;
+  return field && field.stringValue ? String(field.stringValue) : '';
 }
 
 function deleteFirebaseAuthUser_(userId) {
@@ -240,6 +409,21 @@ function decodePdf_(base64) {
   return bytes;
 }
 
+function decodeTrack_(base64) {
+  const value = String(base64 || '').trim();
+  if (!value) throw new Error('Файл трека не передан.');
+  let bytes;
+  try {
+    bytes = Utilities.base64Decode(value);
+  } catch (error) {
+    throw new Error('Не удалось прочитать файл трека.');
+  }
+  if (!bytes.length || bytes.length > MAX_TRACK_BYTES) {
+    throw new Error('Размер трека должен быть не больше 15 МБ.');
+  }
+  return bytes;
+}
+
 function digest_(bytes) {
   return Utilities.base64EncodeWebSafe(
     Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, bytes)
@@ -265,6 +449,25 @@ function cleanFileName_(value) {
     .trim();
   if (!result || result.length > 200 || !/\.pdf$/i.test(result)) {
     throw new Error('Неверное имя PDF-файла.');
+  }
+  return result;
+}
+
+function cleanTrackFileName_(value) {
+  const result = String(value || '')
+    .replace(/[\\/:*?"<>|\x00-\x1f]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!result || result.length > 200 || !/\.(gpx|kml|kmz|tcx|fit)$/i.test(result)) {
+    throw new Error('Допустимы только файлы GPX, KML, KMZ, TCX и FIT.');
+  }
+  return result;
+}
+
+function cleanTrackMimeType_(value) {
+  const result = cleanText_(value, 120).trim().toLowerCase();
+  if (!result || !/^[a-z0-9.+-]+\/[a-z0-9.+-]+$/.test(result)) {
+    return 'application/octet-stream';
   }
   return result;
 }
@@ -295,6 +498,18 @@ function userError_(error, action) {
     'Не настроена служебная учетная запись Firebase.',
     'Неверные данные служебной учетной записи Firebase.',
     'Не удалось авторизовать служебную учетную запись Firebase.',
+    'Доступ к загрузке треков не подтвержден.',
+    'Доступ к удалению треков не подтвержден.',
+    'Треки можно добавлять только в активный поиск.',
+    'Удалять можно только собственные треки.',
+    'Не удалось удалить карточку трека.',
+    'Не удалось сохранить карточку трека.',
+    'Не удалось проверить данные активного поиска.',
+    'Файл трека не передан.',
+    'Не удалось прочитать файл трека.',
+    'Размер трека должен быть не больше 15 МБ.',
+    'Допустимы только файлы GPX, KML, KMZ, TCX и FIT.',
+    'Загрузчик треков занят. Повторите через несколько секунд.',
     'Неверный идентификатор пользователя.',
     'Загрузчик занят. Повторите через несколько секунд.',
     'PDF-файл не передан.',

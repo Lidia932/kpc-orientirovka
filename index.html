@@ -10,7 +10,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600&family=Roboto+Condensed:wght@400;500&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg">
-  <link rel="stylesheet" href="styles.css?v=37">
+  <script>
+    try {
+      document.documentElement.dataset.theme = localStorage.getItem('kpc-theme') === 'dark' ? 'dark' : 'light';
+    } catch (_) {
+      document.documentElement.dataset.theme = 'light';
+    }
+  </script>
+  <link rel="stylesheet" href="styles.css?v=38">
   <title>КПЦ Симбирск — ориентировка</title>
 </head>
 <body class="auth-loading">
@@ -78,6 +85,15 @@
           <span>Установить приложение</span>
           <span class="install-arrow" aria-hidden="true">›</span>
         </button>
+        <label class="menu-theme" for="themeToggle">
+          <span class="menu-theme-icon" aria-hidden="true">
+            <svg class="theme-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+            <svg class="theme-moon" viewBox="0 0 24 24"><path d="M20.5 14.1A8 8 0 0 1 9.9 3.5 8.5 8.5 0 1 0 20.5 14.1Z"/></svg>
+          </span>
+          <span class="menu-theme-label">Ночная тема</span>
+          <input id="themeToggle" type="checkbox" role="switch" aria-label="Включить ночную тему">
+          <span class="theme-switch" aria-hidden="true"></span>
+        </label>
         <button id="homeViewBtn" class="menu-section-link" type="button">
           <svg class="menu-section-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
           <span>Главная</span>
@@ -244,6 +260,25 @@
     <div class="saved-poster-shell">
       <img id="savedPoster" alt="Сохранённая ориентировка">
     </div>
+    <section id="tracksSection" class="tracks-section" aria-labelledby="tracksTitle">
+      <div class="tracks-head">
+        <div>
+          <h3 id="tracksTitle">Треки поиска</h3>
+          <p>Маршруты участников и кинологических расчётов</p>
+        </div>
+        <span id="tracksCount" class="tracks-count">0</span>
+      </div>
+      <div id="trackUploader" class="track-uploader">
+        <label class="track-upload-button" for="trackFilesInput">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
+          <span><strong>Загрузить треки</strong><small>Можно выбрать сразу несколько файлов</small></span>
+        </label>
+        <input id="trackFilesInput" type="file" accept=".gpx,.kml,.kmz,.tcx,.fit" multiple hidden>
+        <p>GPX, KML, KMZ, TCX или FIT · до 15 МБ на файл · не более 10 файлов за раз</p>
+      </div>
+      <p id="tracksMessage" class="tracks-message" aria-live="polite"></p>
+      <div id="tracksList" class="tracks-list"></div>
+    </section>
     <section class="notes-section" aria-labelledby="notesTitle">
       <div class="notes-head">
         <div><h3 id="notesTitle">Заметки</h3><p>Общая история поиска</p></div>
@@ -387,6 +422,6 @@
 </dialog>
 
 <script src="vendor/jspdf.umd.min.js"></script>
-<script type="module" src="app-v5.js?v=37"></script>
+<script type="module" src="app-v5.js?v=38"></script>
 </body>
 </html>
