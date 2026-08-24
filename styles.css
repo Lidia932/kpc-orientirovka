@@ -18,10 +18,11 @@
 .install-icon{display:grid;place-items:center;width:32px;height:32px;border-radius:6px;background:#2f7d45;color:#fff;font-size:22px;line-height:1}
 .install-arrow{color:#2f7d45;font-size:24px;font-weight:500;line-height:1}
 .menu-section-link,.menu-group>summary{width:100%;padding:11px 10px;text-align:left;background:transparent;color:#29292d;border-radius:6px;font-size:16px;font-weight:800}
-.menu-section-link:hover,.menu-group>summary:hover{background:#f3f3f5}
-.menu-section-link.current,.menu-group.current>summary{background:transparent;color:#8f0000;box-shadow:inset 3px 0 #b90000}
-.menu-subgroup.current .menu-subhead{color:#8f0000}
-.case-link.current{box-shadow:inset 3px 0 #b90000}
+.menu-section-link:hover,.menu-group>summary:hover{background:#f3f7f9;color:#344e5e}
+.menu-section-link.current,.menu-group.current>summary{background:#edf3f6;color:#35566a;box-shadow:inset 0 0 0 1px #d2e0e6}
+.menu-subgroup.current .menu-subhead{color:#4b697c}
+.case-link:hover{background:#edf3f6;color:#35566a}
+.case-link.current{background:#e4edf2;color:#2f5064;box-shadow:inset 0 0 0 1px #cbdce4}
 .save-case{background:#2f7d45;color:#fff;border-color:#246438}
 .save-case:hover{background:#276b3b}
 
