@@ -193,7 +193,7 @@ function responsePage_(payload) {
   const targetOrigin = JSON.stringify(SITE_ORIGIN);
   return HtmlService.createHtmlOutput(
     '<!doctype html><html><head><meta charset="utf-8"></head><body>'
-    + '<script>window.parent.postMessage(' + serialized + ',' + targetOrigin + ');<\/script>'
+    + '<script>window.top.postMessage(' + serialized + ',' + targetOrigin + ');<\/script>'
     + '</body></html>'
   ).setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }

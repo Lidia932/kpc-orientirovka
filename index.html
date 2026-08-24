@@ -217,29 +217,6 @@
   </div>
 </dialog>
 
-<dialog id="archiveLinkDialog" class="app-dialog archive-link-dialog">
-  <div>
-    <h2>Загрузите PDF на Google Drive</h2>
-    <p>Файл <strong id="archiveFileName"></strong> уже скачан на устройство.</p>
-    <ol class="archive-instructions">
-      <li>Загрузите скачанный PDF в папку архива.</li>
-      <li>Откройте доступ к файлу по ссылке и скопируйте её.</li>
-      <li>Вставьте ссылку ниже и завершите перенос.</li>
-    </ol>
-    <div class="archive-helper-actions">
-      <a id="openArchiveFolderLink" class="secondary button-link" href="#" target="_blank" rel="noopener">Открыть папку архива</a>
-      <button id="redownloadArchiveBtn" class="ghost" type="button">Скачать PDF повторно</button>
-    </div>
-    <label class="archive-url-label" for="archiveUrlInput">Ссылка на PDF-файл в Google Drive</label>
-    <input id="archiveUrlInput" type="url" inputmode="url" autocomplete="off" placeholder="https://drive.google.com/file/d/…/view">
-    <p id="archiveLinkMessage" class="archive-link-message" aria-live="polite"></p>
-    <div class="dialog-actions">
-      <button id="cancelArchiveLinkBtn" class="ghost" type="button">Отмена</button>
-      <button id="completeArchiveBtn" class="primary" type="button">Завершить перенос</button>
-    </div>
-  </div>
-</dialog>
-
 <dialog id="usersDialog" class="app-dialog users-dialog">
   <div>
     <div class="dialog-head">
@@ -251,6 +228,6 @@
 </dialog>
 
 <script src="vendor/jspdf.umd.min.js"></script>
-<script type="module" src="app-v5.js?v=27"></script>
+<script type="module" src="app-v5.js?v=28"></script>
 </body>
 </html>
