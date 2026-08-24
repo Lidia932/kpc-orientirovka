@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600&family=Roboto+Condensed:wght@400;500&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg">
-  <link rel="stylesheet" href="styles.css?v=31">
+  <link rel="stylesheet" href="styles.css?v=32">
   <title>КПЦ Симбирск — ориентировка</title>
 </head>
 <body class="auth-loading">
@@ -61,6 +61,12 @@
       </button>
       <nav id="mainMenu" class="main-menu" aria-label="Главное меню" hidden>
         <div id="userTools" class="menu-user" hidden>
+          <button id="profileMenuBtn" class="menu-avatar-button" type="button" aria-label="Открыть профиль" title="Профиль">
+            <img id="menuAvatar" alt="" hidden>
+            <span id="menuAvatarFallback" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+            </span>
+          </button>
           <div class="menu-user-info">
             <strong id="currentUserName"></strong>
             <span id="currentUserEmail"></span>
@@ -72,9 +78,12 @@
           <span>Установить приложение</span>
           <span class="install-arrow" aria-hidden="true">›</span>
         </button>
-        <button id="createViewBtn" class="menu-section-link" type="button">Создание ориентировки</button>
+        <button id="createViewBtn" class="menu-section-link" type="button">
+          <svg class="menu-section-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15h6"/></svg>
+          <span>Создание ориентировки</span>
+        </button>
         <details class="menu-group" data-status="active" open>
-          <summary>Активный поиск</summary>
+          <summary><span class="menu-section-title"><svg class="menu-section-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span>Активный поиск</span></span></summary>
           <div class="menu-subgroup" data-type="ПСС">
             <div class="menu-subhead"><span>ПСС</span><span id="activePssCount" class="menu-count">0</span></div>
             <div id="activePss" class="case-links"></div>
@@ -85,7 +94,7 @@
           </div>
         </details>
         <details class="menu-group" data-status="archive">
-          <summary>Архив</summary>
+          <summary><span class="menu-section-title"><svg class="menu-section-icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg><span>Архив</span></span></summary>
           <div class="menu-subgroup" data-type="ПСС">
             <div class="menu-subhead"><span>ПСС</span><span id="archivePssCount" class="menu-count">0</span></div>
             <div id="archivePss" class="case-links"></div>
@@ -217,6 +226,74 @@
   </div>
 </dialog>
 
+<dialog id="profileDialog" class="app-dialog profile-dialog">
+  <div>
+    <div class="dialog-head profile-dialog-head">
+      <div>
+        <span id="profileRole" class="profile-role"></span>
+        <h2>Профиль</h2>
+      </div>
+      <button id="profileCloseBtn" class="icon-close" type="button" aria-label="Закрыть">×</button>
+    </div>
+    <div class="profile-content">
+      <section class="profile-photo-section">
+        <div class="profile-avatar-large">
+          <img id="profileAvatar" alt="Фото профиля" hidden>
+          <span id="profileAvatarFallback" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+          </span>
+        </div>
+        <div class="profile-photo-actions">
+          <strong id="profileDisplayName"></strong>
+          <span id="profileEmail"></span>
+          <label class="profile-photo-button" for="profilePhotoInput">Изменить фото</label>
+          <input id="profilePhotoInput" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+          <button id="removeProfilePhotoBtn" class="profile-remove-photo" type="button">Удалить фото</button>
+        </div>
+      </section>
+
+      <form id="profileNameForm" class="profile-section">
+        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Имя</h3>
+        <label for="profileName">Отображаемое имя</label>
+        <div class="profile-inline-action">
+          <input id="profileName" type="text" minlength="2" maxlength="80" autocomplete="name" required>
+          <button id="profileNameSaveBtn" class="primary" type="submit">Сохранить</button>
+        </div>
+      </form>
+
+      <section id="profilePasswordSection" class="profile-section" hidden>
+        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Пароль</h3>
+        <form id="profilePasswordForm" class="profile-password-form">
+          <label for="profileNewPassword">Новый пароль</label>
+          <input id="profileNewPassword" type="password" minlength="6" autocomplete="new-password" required>
+          <label for="profileConfirmPassword">Повторите новый пароль</label>
+          <input id="profileConfirmPassword" type="password" minlength="6" autocomplete="new-password" required>
+          <button id="profilePasswordSaveBtn" class="ghost" type="submit">Изменить пароль</button>
+        </form>
+      </section>
+
+      <section class="profile-section profile-auth-section">
+        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>Способы входа</h3>
+        <div class="profile-providers">
+          <span id="emailProviderState" class="provider-state"></span>
+          <span id="googleProviderState" class="provider-state"></span>
+        </div>
+        <form id="linkEmailForm" class="link-email-form" hidden>
+          <p>Для входа по почте будет использоваться <strong id="linkEmailAddress"></strong>. Придумайте пароль.</p>
+          <label for="linkEmailPassword">Пароль</label>
+          <input id="linkEmailPassword" type="password" minlength="6" autocomplete="new-password" required>
+          <label for="linkEmailPasswordConfirm">Повторите пароль</label>
+          <input id="linkEmailPasswordConfirm" type="password" minlength="6" autocomplete="new-password" required>
+          <button id="linkEmailBtn" class="ghost" type="submit">Добавить вход по почте</button>
+        </form>
+        <button id="linkGoogleBtn" class="google-auth profile-google-button" type="button" hidden><span aria-hidden="true">G</span> Добавить вход через Google</button>
+      </section>
+
+      <p id="profileMessage" class="profile-message" aria-live="polite"></p>
+    </div>
+  </div>
+</dialog>
+
 <dialog id="usersDialog" class="app-dialog users-dialog">
   <div>
     <div class="dialog-head">
@@ -228,6 +305,6 @@
 </dialog>
 
 <script src="vendor/jspdf.umd.min.js"></script>
-<script type="module" src="app-v5.js?v=30"></script>
+<script type="module" src="app-v5.js?v=32"></script>
 </body>
 </html>

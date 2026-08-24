@@ -30,14 +30,40 @@ service cloud.firestore {
     match /users/{userId} {
       allow create: if signedIn()
         && request.auth.uid == userId
-        && request.resource.data.keys().hasOnly(['email', 'displayName', 'approved', 'role', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['email', 'displayName', 'approved', 'role', 'createdAt', 'photo', 'photoType'])
         && request.resource.data.email == request.auth.token.email
         && (
           (ownerIdentity() && request.resource.data.approved == true && request.resource.data.role == 'admin')
           || (!ownerEmail() && request.resource.data.approved == false && request.resource.data.role == 'member')
         );
-      allow read: if signedIn() && (request.auth.uid == userId || admin());
-      allow update: if admin()
+      allow read: if signedIn()
+        && (
+          request.auth.uid == userId
+          || admin()
+          || (approved() && resource.data.approved == true)
+        );
+      allow update: if (
+        signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'photo', 'photoType'])
+        && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['displayName'])
+          || (
+            request.resource.data.displayName is string
+            && request.resource.data.displayName.size() >= 2
+            && request.resource.data.displayName.size() <= 80
+          )
+        )
+        && (
+          !request.resource.data.keys().hasAny(['photo', 'photoType'])
+          || (
+            request.resource.data.keys().hasAll(['photo', 'photoType'])
+            && request.resource.data.photo.size() <= 150000
+            && request.resource.data.photoType in ['', 'image/jpeg']
+          )
+        )
+      ) || (
+        admin()
         && userId != request.auth.uid
         && (
           (
@@ -51,7 +77,8 @@ service cloud.firestore {
             && request.resource.data.role == 'member'
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['approved'])
           )
-        );
+        )
+      );
       allow delete: if false;
     }
 

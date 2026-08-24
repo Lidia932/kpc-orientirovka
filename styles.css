@@ -9,16 +9,24 @@
 .manage-users-button{position:relative;white-space:nowrap}
 .manage-users-button .user-count{position:static;margin-left:4px}
 .user-state{flex-wrap:wrap}
-.menu-user{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;margin-bottom:8px;padding:7px 7px 12px;border-bottom:1px solid #e7e7ea}
+.menu-user{display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:9px;margin-bottom:8px;padding:7px 7px 12px;border-bottom:1px solid #e7e7ea}
 .menu-user-info{display:grid;gap:2px;min-width:0}
 .menu-user-info strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
 .menu-user-info span{overflow-wrap:anywhere;color:#707078;font-size:11px}
+.menu-avatar-button{display:grid;place-items:center;width:40px;height:40px;padding:0;overflow:hidden;border:1px solid #ccd8de;border-radius:50%;background:#edf3f6;color:#466779}
+.menu-avatar-button:hover{background:#dfeaf0;border-color:#aebfc8}
+.menu-avatar-button img{width:100%;height:100%;object-fit:cover}
+.menu-avatar-button>span{display:grid;place-items:center;width:100%;height:100%}
+.menu-avatar-button svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .status-wrap .badge{display:inline-flex}
 .menu-install{width:100%;display:grid;grid-template-columns:32px minmax(0,1fr) auto;align-items:center;gap:10px;margin-bottom:8px;padding:8px 10px;text-align:left;background:#f0f8f2;color:#205d32;border:1px solid #b9dbc2}
 .menu-install:hover{background:#e3f3e7;border-color:#8fc49d}
 .install-icon{display:grid;place-items:center;width:32px;height:32px;border-radius:6px;background:#2f7d45;color:#fff;font-size:22px;line-height:1}
 .install-arrow{color:#2f7d45;font-size:24px;font-weight:500;line-height:1}
 .menu-section-link,.menu-group>summary{width:100%;padding:11px 10px;text-align:left;background:transparent;color:#29292d;border-radius:6px;font-size:16px;font-weight:800}
+.menu-section-link,.menu-section-title{display:flex;align-items:center;gap:9px}
+.menu-section-icon{width:19px;height:19px;flex:0 0 19px;fill:none;stroke:#607987;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.menu-section-link.current .menu-section-icon,.menu-group.current .menu-section-icon{stroke:#35566a}
 .menu-section-link:hover,.menu-group>summary:hover{background:#f3f7f9;color:#344e5e}
 .menu-section-link.current,.menu-group.current>summary{background:#edf3f6;color:#35566a;box-shadow:inset 0 0 0 1px #d2e0e6}
 .menu-subgroup.current .menu-subhead{color:#4b697c}
@@ -44,6 +52,41 @@
 .case-message{min-height:20px;margin:10px 0 0;color:#66531e;font-size:13px;line-height:1.4}
 .case-message a{color:#355f78;font-weight:700}
 
+.profile-dialog{width:min(620px,calc(100vw - 28px));max-height:min(820px,calc(100vh - 28px));overflow:auto}
+.profile-dialog-head{margin-bottom:16px}
+.profile-dialog-head h2{margin:3px 0 0}
+.profile-role{display:inline-flex;padding:4px 7px;border-radius:4px;background:#e7f1f5;color:#355f6d;font-size:11px;font-weight:800}
+.profile-content{display:grid;gap:14px}
+.profile-photo-section{display:grid;grid-template-columns:96px minmax(0,1fr);align-items:center;gap:16px;padding:14px;background:#f5f7f8;border:1px solid #dce2e5;border-radius:8px}
+.profile-avatar-large{display:grid;place-items:center;width:96px;height:96px;overflow:hidden;border:2px solid #fff;border-radius:50%;background:#dfe9ee;color:#496b7d;box-shadow:0 1px 4px #0002}
+.profile-avatar-large img{width:100%;height:100%;object-fit:cover}
+.profile-avatar-large>span{display:grid;place-items:center;width:100%;height:100%}
+.profile-avatar-large svg{width:52px;height:52px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.profile-photo-actions{display:flex;align-items:flex-start;flex-wrap:wrap;gap:7px;min-width:0}
+.profile-photo-actions strong,.profile-photo-actions>span{width:100%;overflow-wrap:anywhere}
+.profile-photo-actions strong{font-size:17px}.profile-photo-actions>span{margin-top:-3px;color:#6b7075;font-size:12px}
+.profile-photo-button,.profile-remove-photo{display:inline-flex;align-items:center;justify-content:center;margin:4px 0 0;padding:8px 10px;border:1px solid #cbd4d9;border-radius:6px;background:#fff;color:#3d5664;font-size:12px;font-weight:800;cursor:pointer}
+.profile-photo-button:hover,.profile-remove-photo:hover{background:#e8eef1}
+.profile-remove-photo{border:0;color:#7b4646;background:transparent}
+.profile-section{padding:14px;border:1px solid #dfe2e4;border-radius:8px}
+.profile-section h3{display:flex;align-items:center;gap:8px;margin:0 0 12px;font-size:16px}
+.profile-section h3 svg{width:18px;height:18px;fill:none;stroke:#587485;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.profile-inline-action{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:8px}
+.profile-inline-action input{margin-top:5px}
+.profile-inline-action button{height:43px}
+.profile-password-form,.link-email-form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.profile-password-form button,.link-email-form p,.link-email-form button{grid-column:1/-1}
+.profile-password-form input,.link-email-form input{margin-top:5px}
+.profile-auth-section>h3{margin-bottom:8px}
+.profile-providers{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}
+.provider-state{padding:6px 8px;border-radius:5px;background:#f1f2f3;color:#686d71;font-size:12px;font-weight:800}
+.provider-state.connected{background:#e7f5ea;color:#286238}
+.link-email-form{margin-top:12px;padding-top:12px;border-top:1px solid #e1e3e5}
+.link-email-form p{margin:0 0 2px;color:#62676b;font-size:13px;line-height:1.4}
+.profile-google-button{margin-top:10px}
+.profile-message{min-height:19px;margin:0!important;color:#765519!important;font-size:12px!important}
+.profile-message.success{color:#286238!important}
+
 .users-dialog{width:min(920px,calc(100vw - 32px))}
 .user-row{display:grid;grid-template-columns:minmax(210px,1fr) minmax(0,auto);align-items:center;gap:18px}
 .user-info{min-width:210px;line-height:1.3}
@@ -60,6 +103,13 @@
 }
 
 @media(max-width:520px){
+  .profile-dialog{padding:16px}
+  .profile-photo-section{grid-template-columns:74px minmax(0,1fr);gap:12px;padding:12px}
+  .profile-avatar-large{width:74px;height:74px}
+  .profile-avatar-large svg{width:40px;height:40px}
+  .profile-inline-action,.profile-password-form,.link-email-form{grid-template-columns:1fr}
+  .profile-password-form button,.link-email-form p,.link-email-form button{grid-column:auto}
+  .profile-inline-action button{height:auto}
   .user-state{display:grid;grid-template-columns:1fr}
   .user-state button{width:100%;white-space:normal}
   .approval{justify-self:start}
@@ -91,7 +141,10 @@
 .notes-empty{padding:20px 10px;text-align:center;color:#85858c;font-size:13px;border-top:1px solid #eee}
 .note-item{padding:14px;overflow:hidden;border:1px solid #dcdfe2;border-radius:7px;background:#fff}
 .note-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
-.note-author{display:grid;gap:2px;min-width:0}
+.note-avatar{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;overflow:hidden;border-radius:50%;background:#e2ebef;color:#416476;font-size:15px;font-weight:800}
+.note-avatar img{width:100%;height:100%;object-fit:cover}
+.note-avatar>span{display:grid;place-items:center;width:100%;height:100%}
+.note-author{display:grid;flex:1;gap:2px;min-width:0}
 .note-author strong,.note-author span{overflow-wrap:anywhere}.note-author strong{font-size:14px}
 .note-author span{color:#777;font-size:11px}
 .note-date{flex-shrink:0;color:#85858c;font-size:11px;text-align:right}
@@ -114,9 +167,9 @@
   .note-composer-actions{display:grid;grid-template-columns:1fr}
   .notes-list{gap:14px}
   .note-item{padding:0;border-color:#d7dde1;box-shadow:0 1px 3px #0000000d}
-  .note-item-head{display:flex;flex-direction:column;gap:4px;margin:0;padding:12px 13px 10px;background:#f7f9fa;border-bottom:1px solid #e3e7e9}
+  .note-item-head{display:grid;grid-template-columns:38px minmax(0,1fr);gap:4px 10px;margin:0;padding:12px 13px 10px;background:#f7f9fa;border-bottom:1px solid #e3e7e9}
   .note-author{gap:3px}.note-author strong{font-size:15px}.note-author span{font-size:12px}
-  .note-date{text-align:left}
+  .note-date{grid-column:2;text-align:left}
   .note-content{padding:13px;font-size:15px;line-height:1.55}
   .note-content p,.note-content div{margin-bottom:10px}
   .note-content ul,.note-content ol{margin:5px 0;padding-left:22px}
