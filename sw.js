@@ -1,5 +1,5 @@
-const CACHE='kpc-orientirovka-v11';
-const ASSETS=['./','./index.html','./styles.css','./app-v5.js','./manifest.webmanifest','./template.jpg','./icon.svg'];
+const CACHE='kpc-orientirovka-v12';
+const ASSETS=['./','./index.html','./styles.css','./app-v5.js?v=12','./manifest.webmanifest','./template.jpg','./icon.svg'];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()));
 });
