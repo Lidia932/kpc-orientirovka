@@ -72,25 +72,25 @@
           <span>Установить приложение</span>
           <span class="install-arrow" aria-hidden="true">›</span>
         </button>
-        <button id="createViewBtn" class="menu-home" type="button">Создание ориентировки</button>
-        <details class="menu-group" open>
+        <button id="createViewBtn" class="menu-section-link" type="button">Создание ориентировки</button>
+        <details class="menu-group" data-status="active" open>
           <summary>Активный поиск</summary>
-          <div class="menu-subgroup">
+          <div class="menu-subgroup" data-type="ПСС">
             <div class="menu-subhead"><span>ПСС</span><span id="activePssCount" class="menu-count">0</span></div>
             <div id="activePss" class="case-links"></div>
           </div>
-          <div class="menu-subgroup">
+          <div class="menu-subgroup" data-type="ПТП">
             <div class="menu-subhead"><span>ПТП</span><span id="activePtpCount" class="menu-count">0</span></div>
             <div id="activePtp" class="case-links"></div>
           </div>
         </details>
-        <details class="menu-group">
+        <details class="menu-group" data-status="archive">
           <summary>Архив</summary>
-          <div class="menu-subgroup">
+          <div class="menu-subgroup" data-type="ПСС">
             <div class="menu-subhead"><span>ПСС</span><span id="archivePssCount" class="menu-count">0</span></div>
             <div id="archivePss" class="case-links"></div>
           </div>
-          <div class="menu-subgroup">
+          <div class="menu-subgroup" data-type="ПТП">
             <div class="menu-subhead"><span>ПТП</span><span id="archivePtpCount" class="menu-count">0</span></div>
             <div id="archivePtp" class="case-links"></div>
           </div>
@@ -194,6 +194,6 @@
   </div>
 </dialog>
 
-<script type="module" src="app-v5.js?v=20"></script>
+<script type="module" src="app-v5.js?v=21"></script>
 </body>
 </html>
