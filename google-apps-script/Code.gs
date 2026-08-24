@@ -458,8 +458,8 @@ function cleanTrackFileName_(value) {
     .replace(/[\\/:*?"<>|\x00-\x1f]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
-  if (!result || result.length > 200 || !/\.(gpx|kml|kmz|tcx|fit)$/i.test(result)) {
-    throw new Error('Допустимы только файлы GPX, KML, KMZ, TCX и FIT.');
+  if (!result || result.length > 200 || !/\.(gpx(?:\.bin)?|kml|kmz|tcx|fit)$/i.test(result)) {
+    throw new Error('Допустимы только файлы GPX, GPX.BIN, KML, KMZ, TCX и FIT.');
   }
   return result;
 }
@@ -508,7 +508,7 @@ function userError_(error, action) {
     'Файл трека не передан.',
     'Не удалось прочитать файл трека.',
     'Размер трека должен быть не больше 15 МБ.',
-    'Допустимы только файлы GPX, KML, KMZ, TCX и FIT.',
+    'Допустимы только файлы GPX, GPX.BIN, KML, KMZ, TCX и FIT.',
     'Загрузчик треков занят. Повторите через несколько секунд.',
     'Неверный идентификатор пользователя.',
     'Загрузчик занят. Повторите через несколько секунд.',
