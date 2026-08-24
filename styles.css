@@ -40,6 +40,12 @@
 
 .case-link.archive-drive-link{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;text-decoration:none}
 .case-link.archive-drive-link::after{content:'↗';font-size:16px;color:#587083}
+.archive-link-dialog{width:min(560px,calc(100vw - 28px))}
+.archive-instructions{display:grid;gap:8px;margin:0 0 18px;padding-left:22px;color:#444;line-height:1.4}
+.archive-helper-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.button-link{display:flex;align-items:center;justify-content:center;padding:11px 14px;border-radius:8px;text-decoration:none;font-weight:700;text-align:center}
+.archive-url-label{font-size:13px}
+.archive-link-message{min-height:20px!important;margin:8px 0 12px!important;color:#8f0000!important;font-size:13px}
 .case-message{min-height:20px;margin:10px 0 0;color:#66531e;font-size:13px;line-height:1.4}
 .case-message a{color:#355f78;font-weight:700}
 
@@ -103,4 +109,5 @@
   .note-item-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0;padding:10px 12px 12px}
   .note-item-actions button{min-height:40px;font-size:13px}
   .case-actions{margin-top:24px;padding-top:18px;border-top:1px solid #dedee2}
+  .archive-helper-actions,.archive-link-dialog .dialog-actions{grid-template-columns:1fr}
 }
