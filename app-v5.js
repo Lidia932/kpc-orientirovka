@@ -126,7 +126,51 @@ function stopCaseSubscription(){stopNotesSubscription();if(unsubscribeCases){uns
 function stopUsersSubscription(){if(unsubscribeUsers){unsubscribeUsers();unsubscribeUsers=null}usersSubscriptionMode=null;profilePhotoUrls.forEach(URL.revokeObjectURL);profilePhotoUrls=[];userProfiles.clear();$('pendingUsersCount').hidden=true}
 function subscribeCases(){if(unsubscribeCases)return;unsubscribeCases=onSnapshot(query(collection(db,'cases'),orderBy('createdAt','desc')),snapshot=>{posterUrls.forEach(URL.revokeObjectURL);posterUrls=[];savedCases=snapshot.docs.map(entry=>{const data=entry.data(),posterBytes=data.poster?.toUint8Array?.()||new Uint8Array();const poster=posterBytes.length?URL.createObjectURL(new Blob([posterBytes],{type:'image/jpeg'})):'';if(poster)posterUrls.push(poster);return{id:entry.id,...data,poster,posterBytes,createdAt:data.createdAt?.toMillis?.()||0}});renderMenu();if(currentCaseId){const current=savedCases.find(item=>item.id===currentCaseId);if(current?.archiveUrl)showCreation(true);else if(current)openCase(currentCaseId);else showCreation(true)}else route()},error=>{console.error(error);$('message').textContent='Не удалось загрузить общие ориентировки.'})}
 function subscribeUsers(){if(unsubscribeUsers)return;usersSubscriptionMode=currentIsAdmin()?'admin':'member';const source=usersSubscriptionMode==='admin'?collection(db,'users'):query(collection(db,'users'),where('approved','==',true));unsubscribeUsers=onSnapshot(source,snapshot=>{profilePhotoUrls.forEach(URL.revokeObjectURL);profilePhotoUrls=[];const users=snapshot.docs.map(entry=>{const user={id:entry.id,...entry.data()},bytes=profileBytes(user);if(bytes.length){user.photoUrl=URL.createObjectURL(new Blob([bytes],{type:user.photoType||'image/jpeg'}));profilePhotoUrls.push(user.photoUrl)}return user}).sort((a,b)=>Number(a.approved)-Number(b.approved)||String(a.displayName).localeCompare(String(b.displayName),'ru'));userProfiles=new Map(users.map(user=>[user.id,user]));renderNotes();if(currentIsAdmin()){renderUsers(users);const pending=users.filter(user=>!user.approved).length;$('pendingUsersCount').textContent=String(pending);$('pendingUsersCount').hidden=pending===0}else $('pendingUsersCount').hidden=true},error=>console.error(error))}
-function renderUsers(users){const list=$('usersList'),owner=currentIsOwner();list.replaceChildren();if(!users.length){list.textContent='Зарегистрированных пользователей пока нет.';return}users.forEach(user=>{const row=document.createElement('div');row.className='user-row';const info=document.createElement('div');info.className='user-info';const name=document.createElement('strong');name.textContent=user.displayName||'Без имени';const email=document.createElement('span');email.textContent=user.email||'';info.append(name,email);const state=document.createElement('div');state.className='user-state';const badge=document.createElement('span'),isProfileOwner=(user.email||'').toLowerCase()===OWNER_EMAIL,isSelf=user.id===currentUser?.uid;badge.className='approval '+(user.approved?'approved':'pending');badge.textContent=isProfileOwner?'Владелец':user.role==='admin'?'Администратор':user.approved?'Доступ открыт':'Ожидает';state.append(badge);if(!isSelf&&!isProfileOwner&&(user.role==='member'||owner)){if(user.role==='member'){const access=document.createElement('button');access.type='button';access.className=user.approved?'ghost small':'primary small';access.textContent=user.approved?'Закрыть доступ':'Подтвердить';access.onclick=async()=>{access.disabled=true;try{await updateDoc(doc(db,'users',user.id),{approved:!user.approved})}catch(error){console.error(error);access.disabled=false}};state.append(access)}if(owner){const role=document.createElement('button');role.type='button';role.className='secondary small';role.textContent=user.role==='admin'?'Снять права администратора':'Назначить администратором';role.disabled=user.role!=='admin'&&!user.approved;role.onclick=()=>askConfirmation({title:user.role==='admin'?'Снять права администратора?':'Назначить администратором?',text:`Пользователь «${user.displayName||user.email||'Без имени'}» ${user.role==='admin'?'перейдёт в режим просмотра и сохранит доступ только к своим заметкам.':'сможет создавать, удалять и архивировать ориентировки, управлять пользователями и всеми заметками.'}`,label:user.role==='admin'?'Снять права':'Назначить',kind:'primary',action:async()=>{try{await updateDoc(doc(db,'users',user.id),{role:user.role==='admin'?'member':'admin',approved:true})}catch(error){console.error(error)}}});state.append(role)}}row.append(info,state);list.append(row)})}
+function adminShieldIcon(){const namespace='http://www.w3.org/2000/svg',icon=document.createElementNS(namespace,'svg'),shield=document.createElementNS(namespace,'path'),check=document.createElementNS(namespace,'path');icon.setAttribute('viewBox','0 0 24 24');icon.setAttribute('aria-hidden','true');shield.setAttribute('d','M20 13c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V5l8-3 8 3Z');check.setAttribute('d','m9 12 2 2 4-4');icon.append(shield,check);return icon}
+function renderUsers(users){
+  const list=$('usersList'),owner=currentIsOwner();
+  list.replaceChildren();
+  if(!users.length){list.textContent='Зарегистрированных пользователей пока нет.';return}
+  users.forEach(user=>{
+    const isAdmin=user.role==='admin',row=document.createElement('div');
+    row.className='user-row'+(isAdmin?' user-row-admin':'');
+    const info=document.createElement('div');
+    info.className='user-info';
+    const name=document.createElement('strong');
+    name.textContent=user.displayName||'Без имени';
+    const email=document.createElement('span');
+    email.textContent=user.email||'';
+    info.append(name,email);
+    const state=document.createElement('div');
+    state.className='user-state';
+    const badge=document.createElement('span'),isProfileOwner=(user.email||'').toLowerCase()===OWNER_EMAIL,isSelf=user.id===currentUser?.uid;
+    badge.className=isProfileOwner?'approval owner':isAdmin?'approval admin':user.approved?'approval approved':'approval pending';
+    if(isAdmin&&!isProfileOwner)badge.append(adminShieldIcon(),document.createTextNode('Администратор'));
+    else badge.textContent=isProfileOwner?'Владелец':user.approved?'Доступ открыт':'Ожидает';
+    state.append(badge);
+    if(!isSelf&&!isProfileOwner&&(user.role==='member'||owner)){
+      if(user.role==='member'){
+        const access=document.createElement('button');
+        access.type='button';
+        access.className=user.approved?'ghost small':'primary small';
+        access.textContent=user.approved?'Закрыть доступ':'Подтвердить';
+        access.onclick=async()=>{access.disabled=true;try{await updateDoc(doc(db,'users',user.id),{approved:!user.approved})}catch(error){console.error(error);access.disabled=false}};
+        state.append(access);
+      }
+      if(owner){
+        const role=document.createElement('button');
+        role.type='button';
+        role.className=user.role==='admin'?'demote-admin small':'secondary small';
+        role.textContent=user.role==='admin'?'Снять права администратора':'Назначить администратором';
+        role.disabled=user.role!=='admin'&&!user.approved;
+        role.onclick=()=>askConfirmation({title:user.role==='admin'?'Снять права администратора?':'Назначить администратором?',text:`Пользователь «${user.displayName||user.email||'Без имени'}» ${user.role==='admin'?'перейдёт в режим просмотра и сохранит доступ только к своим заметкам.':'сможет создавать, удалять и архивировать ориентировки, управлять пользователями и всеми заметками.'}`,label:user.role==='admin'?'Снять права':'Назначить',kind:'primary',action:async()=>{try{await updateDoc(doc(db,'users',user.id),{role:user.role==='admin'?'member':'admin',approved:true})}catch(error){console.error(error)}}});
+        state.append(role);
+      }
+    }
+    row.append(info,state);
+    list.append(row);
+  });
+}
 async function handleAuthenticatedUser(user){currentUser=user;try{const ref=await ensureProfile(user);if(unsubscribeProfile)unsubscribeProfile();unsubscribeProfile=onSnapshot(ref,snapshot=>{currentProfile=snapshot.data();if(currentProfile?.approved)showReady(user,currentProfile);else{stopCaseSubscription();stopUsersSubscription();showPending(user)}},error=>{console.error(error);showPending(user);$('pendingMessage').textContent='Не удалось проверить доступ. Обновите страницу.'})}catch(error){console.error(error);showPending(user);$('pendingMessage').textContent='Не удалось завершить регистрацию. Обновите страницу.'}}
 async function logout(){if(unsubscribeProfile){unsubscribeProfile();unsubscribeProfile=null}stopCaseSubscription();stopUsersSubscription();if(currentProfilePhotoUrl){URL.revokeObjectURL(currentProfilePhotoUrl);currentProfilePhotoUrl=null}currentUser=null;currentProfile=null;await signOut(auth)}
 
