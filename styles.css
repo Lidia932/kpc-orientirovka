@@ -285,6 +285,13 @@
 .track-open{background:#edf3f6;color:#355f72;text-decoration:none}.track-open:hover{background:#dfeaf0}.track-delete{background:#f7e9e9;color:#8d3030;border:1px solid #e8caca}.track-delete:hover{background:#f1d8d8}
 .track-open svg,.track-delete svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .track-open span{display:none}
+.shared-tracks-dialog{width:min(520px,calc(100vw - 28px))}
+.shared-tracks-dialog .dialog-head{margin-bottom:13px}.shared-tracks-dialog>div>label{margin-top:14px}
+.shared-tracks-files{display:grid;margin-bottom:14px;border-top:1px solid #e1e4e6}
+.shared-track-file{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 2px;border-bottom:1px solid #e1e4e6}
+.shared-track-file strong{min-width:0;overflow-wrap:anywhere;font-size:13px}.shared-track-file span{flex:0 0 auto;color:#777;font-size:11px}
+.shared-tracks-dialog select{width:100%;height:43px;margin-top:5px;padding:8px 10px;border:1px solid #cfcfd4;border-radius:8px;background:#fff;color:#222;font:inherit;font-size:14px}
+.shared-tracks-dialog select:focus{outline:2px solid #6f8fa333;border-color:#6f8fa3}
 
 @media(max-width:520px){
   .tracks-section{margin-top:20px;padding-top:18px}.track-uploader{padding:10px}.track-upload-button{width:100%}.track-item{grid-template-columns:38px minmax(0,1fr);gap:9px;padding:10px}.track-file-icon{width:38px;height:38px}.track-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr auto}.track-open{display:flex;gap:7px;width:100%;height:40px;font-size:12px;font-weight:800}.track-open span{display:inline}.track-delete{width:42px;height:40px}.track-info strong{font-size:13px}
@@ -321,4 +328,5 @@
 :root[data-theme="dark"] .profile-photo-button,:root[data-theme="dark"] .note-toolbar button,:root[data-theme="dark"] .note-editor,:root[data-theme="dark"] .note-attachment{background:#1d2022;color:#e6eaec;border-color:#4a5155}:root[data-theme="dark"] .provider-state{background:#373c40;color:#c5cacf}
 :root[data-theme="dark"] .track-upload-button{background:#34444c;color:#d5e9f2;border-color:#536d79}:root[data-theme="dark"] .track-upload-button:hover{background:#3d5059}:root[data-theme="dark"] .track-upload-button small,:root[data-theme="dark"] .track-uploader>p{color:#a8b4ba}:root[data-theme="dark"] .track-file-icon,:root[data-theme="dark"] .note-avatar{background:#34434a;color:#c5e0eb}:root[data-theme="dark"] .track-open{background:#344149;color:#d6e9f1}
 :root[data-theme="dark"] .note-media-button{background:#34444c;color:#d5e9f2;border-color:#536d79}:root[data-theme="dark"] .note-media-button:hover{background:#3d5059;border-color:#6e8d9a}
+:root[data-theme="dark"] .shared-tracks-files,:root[data-theme="dark"] .shared-track-file{border-color:#41474b}:root[data-theme="dark"] .shared-track-file span{color:#a6adb2}:root[data-theme="dark"] .shared-tracks-dialog select{background:#1b1d1f;color:#edf0f2;border-color:#4a5054}
 :root[data-theme="dark"] .notes-empty,:root[data-theme="dark"] .tracks-empty{color:#a4abb0;border-color:#3a3f43}:root[data-theme="dark"] .note-item-head{background:#292d30;border-color:#41474b}:root[data-theme="dark"] .note-item-actions button{background:#343a3e;color:#dce2e5}:root[data-theme="dark"] .note-item-media img,:root[data-theme="dark"] .note-attachment img{background:#1c1e20}

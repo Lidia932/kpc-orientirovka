@@ -17,7 +17,7 @@
       document.documentElement.dataset.theme = 'light';
     }
   </script>
-  <link rel="stylesheet" href="styles.css?v=45">
+  <link rel="stylesheet" href="styles.css?v=46">
   <title>КПЦ Симбирск — ориентировка</title>
 </head>
 <body class="auth-loading">
@@ -351,6 +351,23 @@
   </div>
 </dialog>
 
+<dialog id="sharedTracksDialog" class="app-dialog shared-tracks-dialog">
+  <div>
+    <div class="dialog-head">
+      <div><h2>Добавить полученные треки</h2><p>Выберите активный поиск для загруженных файлов.</p></div>
+      <button id="sharedTracksCloseBtn" class="icon-close" type="button" aria-label="Закрыть">×</button>
+    </div>
+    <div id="sharedTracksFiles" class="shared-tracks-files"></div>
+    <label for="sharedTracksCaseSelect">Активный поиск</label>
+    <select id="sharedTracksCaseSelect"></select>
+    <p id="sharedTracksMessage" class="tracks-message" aria-live="polite"></p>
+    <div class="dialog-actions">
+      <button id="sharedTracksCancelBtn" class="ghost" type="button">Отмена</button>
+      <button id="sharedTracksUploadBtn" class="primary" type="button">Загрузить треки</button>
+    </div>
+  </div>
+</dialog>
+
 <dialog id="profileDialog" class="app-dialog profile-dialog">
   <div>
     <div class="dialog-head profile-dialog-head">
@@ -431,6 +448,6 @@
 </dialog>
 
 <script src="vendor/jspdf.umd.min.js"></script>
-<script type="module" src="app-v5.js?v=45"></script>
+<script type="module" src="app-v5.js?v=46"></script>
 </body>
 </html>
