@@ -300,8 +300,15 @@
 :root[data-theme="dark"] .case-link{background:#303438;color:#e7ebed}
 :root[data-theme="dark"] .menu-section-link:hover,:root[data-theme="dark"] .menu-group>summary:hover,:root[data-theme="dark"] .case-link:hover{background:#31383c;color:#d4e8f1}
 :root[data-theme="dark"] .menu-section-link.current,:root[data-theme="dark"] .menu-group.current>summary,:root[data-theme="dark"] .case-link.current{background:#344149;color:#dcebf2;box-shadow:inset 0 0 0 1px #4c606a}
+:root[data-theme="dark"] .menu-section-icon{stroke:#8eb0c0}
+:root[data-theme="dark"] .menu-section-link:hover .menu-section-icon,:root[data-theme="dark"] .menu-group>summary:hover .menu-section-icon{stroke:#b7d4e1}
+:root[data-theme="dark"] .menu-section-link.current .menu-section-icon,:root[data-theme="dark"] .menu-group.current .menu-section-icon{stroke:#d5f0fb}
 :root[data-theme="dark"] .menu-subhead,:root[data-theme="dark"] .empty-link{color:#abb3b8}:root[data-theme="dark"] .menu-count,:root[data-theme="dark"] .notes-count,:root[data-theme="dark"] .tracks-count{background:#394044;color:#dbe2e5}
 :root[data-theme="dark"] .menu-theme{background:#2c3033;color:#e5e9eb;border-color:#41484c}:root[data-theme="dark"] .menu-theme:hover{background:#343a3e}:root[data-theme="dark"] .menu-theme-icon{background:#35404a;color:#bcd7e6}:root[data-theme="dark"] .theme-sun{display:none}:root[data-theme="dark"] .theme-moon{display:block}
+:root[data-theme="dark"] .menu-install{background:#263a2d;color:#d4ead9;border-color:#42634c}
+:root[data-theme="dark"] .menu-install:hover{background:#2e4636;border-color:#5c8167}
+:root[data-theme="dark"] .install-icon{background:#3d7650;color:#fff}
+:root[data-theme="dark"] .install-arrow{color:#9bc9a7}
 :root[data-theme="dark"] .auth-gate{background:#17191b}:root[data-theme="dark"] .auth-panel>p,:root[data-theme="dark"] .pending-user span{color:#abb2b6}:root[data-theme="dark"] .auth-modes,:root[data-theme="dark"] .pending-user{background:#303438}:root[data-theme="dark"] .auth-mode{color:#b7bdc1}:root[data-theme="dark"] .auth-mode.active{background:#42484c;color:#fff}
 :root[data-theme="dark"] input,:root[data-theme="dark"] textarea,:root[data-theme="dark"] .google-auth{background:#1b1d1f;color:#f0f2f3;border-color:#4a5054}:root[data-theme="dark"] label{color:#cdd2d5}:root[data-theme="dark"] input::placeholder,:root[data-theme="dark"] textarea::placeholder{color:#7f878c}
 :root[data-theme="dark"] .ghost,:root[data-theme="dark"] .icon-close{background:#383d41;color:#e4e8ea}:root[data-theme="dark"] .secondary,:root[data-theme="dark"] .danger{background:#4a5054;color:#fff}
