@@ -202,8 +202,9 @@
 .note-editor:empty::before{content:attr(data-placeholder);color:#92989d;pointer-events:none}
 .note-editor p{margin:0 0 8px}.note-editor ul,.note-editor ol{margin:7px 0;padding-left:24px}
 .note-media-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:10px}
-.note-media-button{display:inline-flex;align-items:center;justify-content:center;width:auto;margin:0;padding:8px 11px;background:#e9edef;color:#34424b;border:1px solid #cbd2d6;border-radius:6px;font-size:13px;font-weight:800;cursor:pointer}
-.note-media-button:hover{background:#dfe7eb}
+.note-media-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:auto;margin:0;padding:9px 12px;background:#eaf2f5;color:#31586b;border:1px solid #9eb7c2;border-radius:7px;font-size:13px;font-weight:800;cursor:pointer}
+.note-media-button:hover{background:#dcebef;border-color:#7f9fab}
+.note-media-button svg{width:20px;height:20px;flex:0 0 20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .note-attachments{display:grid;grid-template-columns:minmax(0,560px);gap:10px;margin-top:10px}
 .note-attachment{min-width:0;padding:9px;background:#fff;border:1px solid #d8dcdf;border-radius:7px}
 .note-attachment img{display:block;width:100%;max-height:230px;object-fit:contain;background:#f1f2f3;border-radius:5px}
@@ -311,4 +312,5 @@
 :root[data-theme="dark"] .profile-photo-section,:root[data-theme="dark"] .note-composer,:root[data-theme="dark"] .track-uploader{background:#2c3033;border-color:#454b4f}:root[data-theme="dark"] .profile-section,:root[data-theme="dark"] .users-list,:root[data-theme="dark"] .user-row,:root[data-theme="dark"] .note-item,:root[data-theme="dark"] .track-item{background:#24272a;border-color:#41474b}:root[data-theme="dark"] .user-row-admin{background:#293238}:root[data-theme="dark"] .user-info span,:root[data-theme="dark"] .profile-photo-actions>span,:root[data-theme="dark"] .track-info span,:root[data-theme="dark"] .note-author span,:root[data-theme="dark"] .note-date{color:#a6adb2}
 :root[data-theme="dark"] .profile-photo-button,:root[data-theme="dark"] .note-toolbar button,:root[data-theme="dark"] .note-editor,:root[data-theme="dark"] .note-attachment{background:#1d2022;color:#e6eaec;border-color:#4a5155}:root[data-theme="dark"] .provider-state{background:#373c40;color:#c5cacf}
 :root[data-theme="dark"] .track-upload-button{background:#34444c;color:#d5e9f2;border-color:#536d79}:root[data-theme="dark"] .track-upload-button:hover{background:#3d5059}:root[data-theme="dark"] .track-upload-button small,:root[data-theme="dark"] .track-uploader>p{color:#a8b4ba}:root[data-theme="dark"] .track-file-icon,:root[data-theme="dark"] .note-avatar{background:#34434a;color:#c5e0eb}:root[data-theme="dark"] .track-open{background:#344149;color:#d6e9f1}
+:root[data-theme="dark"] .note-media-button{background:#34444c;color:#d5e9f2;border-color:#536d79}:root[data-theme="dark"] .note-media-button:hover{background:#3d5059;border-color:#6e8d9a}
 :root[data-theme="dark"] .notes-empty,:root[data-theme="dark"] .tracks-empty{color:#a4abb0;border-color:#3a3f43}:root[data-theme="dark"] .note-item-head{background:#292d30;border-color:#41474b}:root[data-theme="dark"] .note-item-actions button{background:#343a3e;color:#dce2e5}:root[data-theme="dark"] .note-item-media img,:root[data-theme="dark"] .note-attachment img{background:#1c1e20}

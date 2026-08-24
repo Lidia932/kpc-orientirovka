@@ -1,5 +1,5 @@
-const CACHE='kpc-orientirovka-v40';
-const ASSETS=['./','./index.html','./styles.css?v=40','./app-v5.js?v=40','./firebase-config.js','./manifest.webmanifest','./template.jpg','./icon.svg','./icon-192.png','./icon-512.png','./vendor/jspdf.umd.min.js'];
+const CACHE='kpc-orientirovka-v41';
+const ASSETS=['./','./index.html','./styles.css?v=41','./app-v5.js?v=41','./firebase-config.js','./manifest.webmanifest','./template.jpg','./icon.svg','./icon-192.png','./icon-512.png','./vendor/jspdf.umd.min.js'];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()));
 });
