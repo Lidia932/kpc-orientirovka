@@ -2,11 +2,19 @@
   "name": "КПЦ Симбирск — ориентировка",
   "short_name": "Ориентировка",
   "description": "Офлайн-генератор ориентировок КПЦ Симбирск",
+  "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f2f3f5",
   "theme_color": "#b90000",
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "./manifest.webmanifest",
+      "id": "https://lidia932.github.io/kpc-orientirovka/"
+    }
+  ],
   "icons": [
     {
       "src": "icon-192.png",
