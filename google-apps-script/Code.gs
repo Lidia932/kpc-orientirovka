@@ -19,8 +19,8 @@ function doPost(event) {
     const pdfBytes = decodePdf_(parameters.pdfBase64);
     const user = verifyFirebaseUser_(idToken);
 
-    if (!isApprovedUser_(idToken, user.localId)) {
-      throw new Error('Доступ пользователя к сайту не подтвержден.');
+    if (!isArchiveAdmin_(idToken, user.localId)) {
+      throw new Error('Архивировать ориентировки могут только администраторы.');
     }
 
     const file = saveArchiveFile_(caseId, fileName, pdfBytes);
@@ -68,7 +68,7 @@ function verifyFirebaseUser_(idToken) {
   return user;
 }
 
-function isApprovedUser_(idToken, userId) {
+function isArchiveAdmin_(idToken, userId) {
   const url = 'https://firestore.googleapis.com/v1/projects/' + FIREBASE_PROJECT_ID
     + '/databases/(default)/documents/users/' + encodeURIComponent(userId);
   const response = UrlFetchApp.fetch(url, {
@@ -81,7 +81,9 @@ function isApprovedUser_(idToken, userId) {
   const document = JSON.parse(response.getContentText());
   return document.fields
     && document.fields.approved
-    && document.fields.approved.booleanValue === true;
+    && document.fields.approved.booleanValue === true
+    && document.fields.role
+    && document.fields.role.stringValue === 'admin';
 }
 
 function saveArchiveFile_(caseId, fileName, pdfBytes) {
@@ -176,7 +178,7 @@ function userError_(error) {
     'Не передан токен пользователя.',
     'Авторизация пользователя истекла. Войдите на сайт заново.',
     'Пользователь не найден.',
-    'Доступ пользователя к сайту не подтвержден.',
+    'Архивировать ориентировки могут только администраторы.',
     'Загрузчик занят. Повторите через несколько секунд.',
     'PDF-файл не передан.',
     'Не удалось прочитать PDF-файл.',

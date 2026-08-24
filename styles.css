@@ -8,6 +8,7 @@
 .brand-area{display:flex;align-items:center;gap:14px;min-width:0}
 .manage-users-button{position:relative;white-space:nowrap}
 .manage-users-button .user-count{position:static;margin-left:4px}
+.user-state{flex-wrap:wrap}
 .menu-user{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;margin-bottom:8px;padding:7px 7px 12px;border-bottom:1px solid #e7e7ea}
 .menu-user-info{display:grid;gap:2px;min-width:0}
 .menu-user-info strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
