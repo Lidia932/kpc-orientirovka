@@ -44,25 +44,30 @@
   </div>
 </section>
 <header class="app-header">
-  <div class="brand-block">
-    <h1>КПЦ Симбирск</h1>
-    <p id="pageSubtitle">Создание ориентировки</p>
+  <div class="brand-area">
+    <div class="brand-block">
+      <h1>КПЦ Симбирск</h1>
+      <p id="pageSubtitle">Создание ориентировки</p>
+    </div>
+    <button id="manageUsersBtn" class="ghost small manage-users-button" type="button" hidden>Пользователи <span id="pendingUsersCount" class="user-count" hidden></span></button>
   </div>
   <div class="header-tools">
     <div class="status-wrap">
       <span id="netStatus" class="badge">Проверяю сеть…</span>
-      <button id="installBtn" class="ghost small" hidden>Установить</button>
-    </div>
-    <div id="userTools" class="user-tools" hidden>
-      <button id="manageUsersBtn" class="ghost small" type="button" hidden>Пользователи <span id="pendingUsersCount" class="user-count" hidden></span></button>
-      <span id="currentUserName" class="current-user"></span>
-      <button id="logoutBtn" class="ghost small" type="button">Выйти</button>
+      <button id="installBtn" class="ghost small" type="button">Установить</button>
     </div>
     <div id="menuWrap" class="menu-wrap">
       <button id="menuBtn" class="menu-btn" type="button" aria-label="Открыть главное меню" aria-expanded="false" title="Главное меню">
         <span></span><span></span><span></span>
       </button>
       <nav id="mainMenu" class="main-menu" aria-label="Главное меню" hidden>
+        <div id="userTools" class="menu-user" hidden>
+          <div class="menu-user-info">
+            <strong id="currentUserName"></strong>
+            <span id="currentUserEmail"></span>
+          </div>
+          <button id="logoutBtn" class="ghost small" type="button">Выйти</button>
+        </div>
         <button id="createViewBtn" class="menu-home" type="button">Создание ориентировки</button>
         <details class="menu-group" open>
           <summary>Активный поиск</summary>
@@ -185,6 +190,6 @@
   </div>
 </dialog>
 
-<script type="module" src="app-v5.js?v=15"></script>
+<script type="module" src="app-v5.js?v=16"></script>
 </body>
 </html>

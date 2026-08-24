@@ -24,6 +24,7 @@ service cloud.firestore {
 
     function admin() {
       return approved()
+        && ownerEmail()
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
@@ -37,7 +38,9 @@ service cloud.firestore {
           || (!ownerEmail() && request.resource.data.approved == false && request.resource.data.role == 'member')
         );
       allow read: if signedIn() && (request.auth.uid == userId || admin());
-      allow update: if admin() && userId != request.auth.uid;
+      allow update: if admin()
+        && userId != request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['approved']);
       allow delete: if admin() && userId != request.auth.uid;
     }
 
