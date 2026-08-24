@@ -25,7 +25,7 @@
   </div>
 </header>
 
-<main class="layout">
+<main id="layout" class="layout">
   <section class="card form-card">
     <div class="section"><h2>Человек</h2><div class="grid">
       <label>Фамилия<input id="lastName" autocomplete="family-name" placeholder="Иванов"></label>
@@ -54,13 +54,13 @@
     </div></div>
     <div class="section"><h2>Актуальность</h2><label>Актуально на<input id="actual" type="date"></label></div>
     <div class="actions">
-      <button id="previewBtn" class="secondary">Обновить предпросмотр</button>
+      <button id="previewBtn" class="secondary">Открыть предпросмотр</button>
       <button id="pdfBtn" class="primary">Создать PDF</button>
       <button id="clearBtn" class="ghost">Очистить</button>
     </div>
     <p id="message" class="message"></p>
   </section>
-  <section class="card preview-card">
+  <section id="previewCard" class="card preview-card" hidden>
     <div class="preview-head"><h2>Предпросмотр</h2><span>A4</span></div>
     <div class="poster-shell"><canvas id="poster" width="1024" height="1536" aria-label="Предпросмотр ориентировки"></canvas></div>
   </section>
