@@ -13,15 +13,81 @@
   <link rel="stylesheet" href="styles.css">
   <title>КПЦ Симбирск — ориентировка</title>
 </head>
-<body>
-<header class="app-header">
-  <div>
-    <h1>КПЦ Симбирск</h1>
-    <p>Создание ориентировки</p>
+<body class="auth-loading">
+<section id="authGate" class="auth-gate" aria-live="polite">
+  <div id="authPanel" class="auth-panel">
+    <div class="auth-brand">КПЦ Симбирск</div>
+    <h1 id="authTitle">Вход</h1>
+    <p id="authLead">Войдите, чтобы работать с общими ориентировками.</p>
+    <div class="auth-modes" role="group" aria-label="Режим авторизации">
+      <button type="button" class="auth-mode active" data-auth-mode="login">Вход</button>
+      <button type="button" class="auth-mode" data-auth-mode="register">Регистрация</button>
+    </div>
+    <button id="googleAuthBtn" class="google-auth" type="button"><span aria-hidden="true">G</span> Продолжить через Google</button>
+    <div class="auth-divider"><span>или</span></div>
+    <form id="emailAuthForm" class="auth-form">
+      <label>Email<input id="authEmail" type="email" autocomplete="email" required placeholder="name@example.com"></label>
+      <label>Пароль<input id="authPassword" type="password" autocomplete="current-password" required minlength="6" placeholder="Не менее 6 символов"></label>
+      <button id="emailAuthBtn" class="primary" type="submit">Войти</button>
+      <button id="resetPasswordBtn" class="auth-link" type="button">Восстановить пароль</button>
+    </form>
+    <p id="authMessage" class="auth-message"></p>
   </div>
-  <div class="status-wrap">
-    <span id="netStatus" class="badge">Проверяю сеть…</span>
-    <button id="installBtn" class="ghost small" hidden>Установить</button>
+  <div id="pendingPanel" class="auth-panel pending-panel" hidden>
+    <div class="auth-brand">КПЦ Симбирск</div>
+    <h1>Доступ ожидает подтверждения</h1>
+    <p>Регистрация завершена. Администратор должен разрешить доступ к ориентировкам.</p>
+    <div class="pending-user"><strong id="pendingName"></strong><span id="pendingEmail"></span></div>
+    <button id="pendingRefreshBtn" class="primary" type="button">Проверить доступ</button>
+    <button id="pendingLogoutBtn" class="ghost" type="button">Выйти</button>
+    <p id="pendingMessage" class="auth-message"></p>
+  </div>
+</section>
+<header class="app-header">
+  <div class="brand-block">
+    <h1>КПЦ Симбирск</h1>
+    <p id="pageSubtitle">Создание ориентировки</p>
+  </div>
+  <div class="header-tools">
+    <div class="status-wrap">
+      <span id="netStatus" class="badge">Проверяю сеть…</span>
+      <button id="installBtn" class="ghost small" hidden>Установить</button>
+    </div>
+    <div id="userTools" class="user-tools" hidden>
+      <button id="manageUsersBtn" class="ghost small" type="button" hidden>Пользователи <span id="pendingUsersCount" class="user-count" hidden></span></button>
+      <span id="currentUserName" class="current-user"></span>
+      <button id="logoutBtn" class="ghost small" type="button">Выйти</button>
+    </div>
+    <div id="menuWrap" class="menu-wrap">
+      <button id="menuBtn" class="menu-btn" type="button" aria-label="Открыть главное меню" aria-expanded="false" title="Главное меню">
+        <span></span><span></span><span></span>
+      </button>
+      <nav id="mainMenu" class="main-menu" aria-label="Главное меню" hidden>
+        <button id="createViewBtn" class="menu-home" type="button">Создание ориентировки</button>
+        <details class="menu-group" open>
+          <summary>Активный поиск</summary>
+          <div class="menu-subgroup">
+            <div class="menu-subhead"><span>ПСС</span><span id="activePssCount" class="menu-count">0</span></div>
+            <div id="activePss" class="case-links"></div>
+          </div>
+          <div class="menu-subgroup">
+            <div class="menu-subhead"><span>ПТП</span><span id="activePtpCount" class="menu-count">0</span></div>
+            <div id="activePtp" class="case-links"></div>
+          </div>
+        </details>
+        <details class="menu-group">
+          <summary>Архив</summary>
+          <div class="menu-subgroup">
+            <div class="menu-subhead"><span>ПСС</span><span id="archivePssCount" class="menu-count">0</span></div>
+            <div id="archivePss" class="case-links"></div>
+          </div>
+          <div class="menu-subgroup">
+            <div class="menu-subhead"><span>ПТП</span><span id="archivePtpCount" class="menu-count">0</span></div>
+            <div id="archivePtp" class="case-links"></div>
+          </div>
+        </details>
+      </nav>
+    </div>
   </div>
 </header>
 
@@ -50,12 +116,13 @@
     <div class="section"><h2>Фото</h2><div class="photo-picker">
       <input id="photo" type="file" accept="image/jpeg,image/png,image/webp" capture="environment">
       <img id="photoThumb" alt="" hidden>
-      <p>Фото хранится только на этом устройстве, пока вы сами не отправите готовый файл.</p>
+      <p>После создания записи ориентировка и фото будут доступны подтвержденным пользователям сайта.</p>
     </div></div>
     <div class="section"><h2>Актуальность</h2><label>Актуально на<input id="actual" type="date"></label></div>
     <div class="actions">
       <button id="previewBtn" class="secondary">Открыть предпросмотр</button>
       <button id="pdfBtn" class="primary">Создать PDF</button>
+      <button id="saveCaseBtn" class="save-case wide">Создать ориентировку с заметками</button>
       <button id="clearBtn" class="ghost">Очистить</button>
     </div>
     <p id="message" class="message"></p>
@@ -65,7 +132,59 @@
     <div class="poster-shell"><canvas id="poster" width="1024" height="1536" aria-label="Предпросмотр ориентировки"></canvas></div>
   </section>
 </main>
-<script src="app-v5.js?v=13"></script>
+
+<main id="caseView" class="case-view" hidden>
+  <section class="case-content">
+    <header class="case-head">
+      <div>
+        <span id="caseStatus" class="case-status"></span>
+        <h2 id="caseTitle"></h2>
+        <p id="caseMeta"></p>
+      </div>
+    </header>
+    <div class="saved-poster-shell">
+      <img id="savedPoster" alt="Сохранённая ориентировка">
+    </div>
+    <div id="caseActions" class="case-actions">
+      <button id="deleteCaseBtn" class="danger" type="button">Удалить ориентировку</button>
+      <button id="archiveCaseBtn" class="primary" type="button">Убрать в архив</button>
+    </div>
+  </section>
+</main>
+
+<dialog id="searchTypeDialog" class="app-dialog">
+  <form method="dialog">
+    <h2>Какой это поиск?</h2>
+    <p>Выберите раздел, в котором будет сохранена ориентировка.</p>
+    <div class="dialog-type-actions">
+      <button type="button" class="type-choice" data-search-type="ПСС">ПСС</button>
+      <button type="button" class="type-choice" data-search-type="ПТП">ПТП</button>
+    </div>
+    <button class="ghost dialog-cancel" value="cancel">Отмена</button>
+  </form>
+</dialog>
+
+<dialog id="confirmDialog" class="app-dialog">
+  <div>
+    <h2 id="confirmTitle"></h2>
+    <p id="confirmText"></p>
+    <div class="dialog-actions">
+      <button id="confirmCancelBtn" class="ghost" type="button">Отмена</button>
+      <button id="confirmAcceptBtn" class="danger" type="button"></button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="usersDialog" class="app-dialog users-dialog">
+  <div>
+    <div class="dialog-head">
+      <div><h2>Пользователи</h2><p>Подтвердите доступ зарегистрированным участникам.</p></div>
+      <button id="closeUsersBtn" class="icon-close" type="button" aria-label="Закрыть">×</button>
+    </div>
+    <div id="usersList" class="users-list"></div>
+  </div>
+</dialog>
+
+<script type="module" src="app-v5.js?v=15"></script>
 </body>
 </html>
-

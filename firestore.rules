@@ -1,0 +1,61 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function ownerEmail() {
+      return signedIn() && request.auth.token.email == 'lidiya.lynx@gmail.com';
+    }
+
+    function ownerIdentity() {
+      return ownerEmail()
+        && request.auth.token.email_verified == true
+        && request.auth.token.firebase.sign_in_provider == 'google.com';
+    }
+
+    function approved() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.approved == true;
+    }
+
+    function admin() {
+      return approved()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    match /users/{userId} {
+      allow create: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['email', 'displayName', 'approved', 'role', 'createdAt'])
+        && request.resource.data.email == request.auth.token.email
+        && (
+          (ownerIdentity() && request.resource.data.approved == true && request.resource.data.role == 'admin')
+          || (!ownerEmail() && request.resource.data.approved == false && request.resource.data.role == 'member')
+        );
+      allow read: if signedIn() && (request.auth.uid == userId || admin());
+      allow update: if admin() && userId != request.auth.uid;
+      allow delete: if admin() && userId != request.auth.uid;
+    }
+
+    match /cases/{caseId} {
+      allow read: if approved();
+      allow create: if approved()
+        && request.resource.data.keys().hasOnly([
+          'type', 'status', 'title', 'data', 'poster', 'createdAt', 'createdBy', 'createdByEmail'
+        ])
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.status == 'active'
+        && request.resource.data.type in ['ПСС', 'ПТП']
+        && request.resource.data.poster.size() <= 768000;
+      allow update: if approved()
+        && resource.data.status == 'active'
+        && request.resource.data.status == 'archive'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'archivedAt', 'archivedBy']);
+      allow delete: if approved() && resource.data.status == 'active';
+    }
+  }
+}
