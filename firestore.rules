@@ -55,9 +55,28 @@ service cloud.firestore {
         && request.resource.data.type in ['ПСС', 'ПТП']
         && request.resource.data.poster.size() <= 768000;
       allow update: if approved()
-        && resource.data.status == 'active'
-        && request.resource.data.status == 'archive'
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'archivedAt', 'archivedBy']);
+        && (
+          (
+            resource.data.status == 'active'
+            && request.resource.data.status == 'archive'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'status', 'archivedAt', 'archivedBy'
+            ])
+          )
+          || (
+            resource.data.status in ['active', 'archive']
+            && request.resource.data.status == 'archive'
+            && request.resource.data.archivedBy == request.auth.uid
+            && request.resource.data.archiveUrl.matches('https://drive\\.google\\.com/.*')
+            && request.resource.data.driveFileId.size() <= 200
+            && request.resource.data.archiveFileName.size() <= 240
+            && !request.resource.data.keys().hasAny(['poster', 'data', 'createdByEmail'])
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'status', 'archiveUrl', 'driveFileId', 'archiveFileName',
+              'archivedAt', 'archivedBy', 'poster', 'data', 'createdByEmail'
+            ])
+          )
+        );
       allow delete: if approved() && resource.data.status == 'active';
     }
 
@@ -88,6 +107,10 @@ service cloud.firestore {
           resource.data.authorId == request.auth.uid
           || admin()
           || !exists(/databases/$(database)/documents/cases/$(resource.data.caseId))
+          || (
+            get(/databases/$(database)/documents/cases/$(resource.data.caseId)).data.status == 'archive'
+            && get(/databases/$(database)/documents/cases/$(resource.data.caseId)).data.archiveUrl.matches('https://drive\\.google\\.com/.*')
+          )
         );
     }
   }
