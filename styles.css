@@ -13,8 +13,10 @@
 .menu-user-info strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
 .menu-user-info span{overflow-wrap:anywhere;color:#707078;font-size:11px}
 .status-wrap .badge{display:inline-flex}
-.menu-install{width:100%;margin-bottom:8px;text-align:left;background:#2f7d45;color:#fff}
-.menu-install:hover{background:#276b3b}
+.menu-install{width:100%;display:grid;grid-template-columns:32px minmax(0,1fr) auto;align-items:center;gap:10px;margin-bottom:8px;padding:8px 10px;text-align:left;background:#f0f8f2;color:#205d32;border:1px solid #b9dbc2}
+.menu-install:hover{background:#e3f3e7;border-color:#8fc49d}
+.install-icon{display:grid;place-items:center;width:32px;height:32px;border-radius:6px;background:#2f7d45;color:#fff;font-size:22px;line-height:1}
+.install-arrow{color:#2f7d45;font-size:24px;font-weight:500;line-height:1}
 .save-case{background:#2f7d45;color:#fff;border-color:#246438}
 .save-case:hover{background:#276b3b}
 
