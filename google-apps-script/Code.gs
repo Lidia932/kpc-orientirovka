@@ -115,7 +115,7 @@ function deleteFirebaseAuthUser_(userId) {
   const response = UrlFetchApp.fetch('https://identitytoolkit.googleapis.com/v1/accounts:delete', {
     method: 'post',
     contentType: 'application/json',
-    headers: {Authorization: 'Bearer ' + ScriptApp.getOAuthToken()},
+    headers: {Authorization: 'Bearer ' + getFirebaseAdminAccessToken_()},
     payload: JSON.stringify({
       localId: userId,
       targetProjectId: FIREBASE_PROJECT_ID
@@ -129,6 +129,64 @@ function deleteFirebaseAuthUser_(userId) {
   if (apiMessage.indexOf('USER_NOT_FOUND') >= 0) return;
   console.error('Firebase Authentication delete failed: ' + response.getResponseCode() + ' ' + response.getContentText());
   throw new Error('Не удалось удалить учетную запись из Firebase Authentication.');
+}
+
+function getFirebaseAdminAccessToken_() {
+  const cache = CacheService.getScriptCache();
+  const cachedToken = cache.get('firebase_admin_access_token');
+  if (cachedToken) return cachedToken;
+
+  const credentialsJson = PropertiesService.getScriptProperties()
+    .getProperty('FIREBASE_SERVICE_ACCOUNT_JSON');
+  if (!credentialsJson) {
+    throw new Error('Не настроена служебная учетная запись Firebase.');
+  }
+
+  const credentials = parseJson_(credentialsJson);
+  if (!credentials || !credentials.client_email || !credentials.private_key) {
+    throw new Error('Неверные данные служебной учетной записи Firebase.');
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const header = base64UrlJson_({alg: 'RS256', typ: 'JWT'});
+  const claims = base64UrlJson_({
+    iss: credentials.client_email,
+    scope: 'https://www.googleapis.com/auth/identitytoolkit',
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now,
+    exp: now + 3600
+  });
+  const unsignedToken = header + '.' + claims;
+  const signature = Utilities.base64EncodeWebSafe(
+    Utilities.computeRsaSha256Signature(unsignedToken, credentials.private_key)
+  ).replace(/=+$/, '');
+
+  const response = UrlFetchApp.fetch('https://oauth2.googleapis.com/token', {
+    method: 'post',
+    contentType: 'application/x-www-form-urlencoded',
+    payload: {
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion: unsignedToken + '.' + signature
+    },
+    muteHttpExceptions: true
+  });
+
+  const payload = parseJson_(response.getContentText()) || {};
+  if (response.getResponseCode() !== 200 || !payload.access_token) {
+    console.error('Firebase service account authorization failed: '
+      + response.getResponseCode() + ' ' + response.getContentText());
+    throw new Error('Не удалось авторизовать служебную учетную запись Firebase.');
+  }
+
+  cache.put('firebase_admin_access_token', payload.access_token, 3300);
+  return payload.access_token;
+}
+
+function base64UrlJson_(value) {
+  return Utilities.base64EncodeWebSafe(
+    JSON.stringify(value),
+    Utilities.Charset.UTF_8
+  ).replace(/=+$/, '');
 }
 
 function saveArchiveFile_(caseId, fileName, pdfBytes) {
@@ -234,6 +292,9 @@ function userError_(error, action) {
     'Удалять можно только заявки со статусом «Ожидает».',
     'Не удалось проверить права пользователя.',
     'Не удалось удалить учетную запись из Firebase Authentication.',
+    'Не настроена служебная учетная запись Firebase.',
+    'Неверные данные служебной учетной записи Firebase.',
+    'Не удалось авторизовать служебную учетную запись Firebase.',
     'Неверный идентификатор пользователя.',
     'Загрузчик занят. Повторите через несколько секунд.',
     'PDF-файл не передан.',
