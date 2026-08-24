@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600&family=Roboto+Condensed:wght@400;500&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg">
-  <link rel="stylesheet" href="styles.css?v=34">
+  <link rel="stylesheet" href="styles.css?v=35">
   <title>КПЦ Симбирск — ориентировка</title>
 </head>
 <body class="auth-loading">
@@ -47,7 +47,7 @@
   <div class="brand-area">
     <div class="brand-block">
       <h1>КПЦ Симбирск</h1>
-      <p id="pageSubtitle">Создание ориентировки</p>
+      <p id="pageSubtitle">Главная</p>
     </div>
     <button id="manageUsersBtn" class="ghost small manage-users-button" type="button" hidden>Пользователи <span id="pendingUsersCount" class="user-count" hidden></span></button>
   </div>
@@ -77,6 +77,10 @@
           <span class="install-icon" aria-hidden="true">↓</span>
           <span>Установить приложение</span>
           <span class="install-arrow" aria-hidden="true">›</span>
+        </button>
+        <button id="homeViewBtn" class="menu-section-link" type="button">
+          <svg class="menu-section-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
+          <span>Главная</span>
         </button>
         <button id="createViewBtn" class="menu-section-link" type="button">
           <svg class="menu-section-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15h6"/></svg>
@@ -108,6 +112,69 @@
     </div>
   </div>
 </header>
+
+<main id="homeView" class="home-view" hidden>
+  <section class="home-overview">
+    <div class="home-welcome">
+      <span id="homeUserRole" class="home-role"></span>
+      <h2>Добро пожаловать, <span id="homeUserName"></span></h2>
+      <p>Активные поиски, ориентировки и основные действия собраны на одной странице.</p>
+    </div>
+    <div class="home-quick-actions" aria-label="Быстрые действия">
+      <button id="homeCreateCaseBtn" class="home-action home-action-primary" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15h6"/></svg>
+        <span><strong>Новая ориентировка</strong><small>Создать запись с заметками</small></span>
+      </button>
+      <button id="homePdfBtn" class="home-action" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15h8"/><path d="M8 11h2"/><path d="M8 19h5"/></svg>
+        <span><strong>Создать PDF</strong><small>Открыть форму ориентировки</small></span>
+      </button>
+      <button id="homeActiveBtn" class="home-action" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <span><strong>Активный поиск</strong><small>ПСС и ПТП</small></span>
+      </button>
+      <button id="homeArchiveBtn" class="home-action" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+        <span><strong>Архив</strong><small>Открыть сохраненные поиски</small></span>
+      </button>
+      <button id="homeUsersBtn" class="home-action" type="button" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span><strong>Пользователи</strong><small>Доступ и роли</small></span>
+      </button>
+    </div>
+  </section>
+
+  <section class="home-stats" aria-label="Сводка по ориентировкам">
+    <button type="button" data-home-menu-status="active" data-home-menu-type="ПСС"><span id="homeActivePssCount">0</span><small>Активных ПСС</small></button>
+    <button type="button" data-home-menu-status="active" data-home-menu-type="ПТП"><span id="homeActivePtpCount">0</span><small>Активных ПТП</small></button>
+    <button type="button" data-home-menu-status="archive"><span id="homeArchiveCount">0</span><small>В архиве</small></button>
+    <div><span id="homeTotalCount">0</span><small>Всего ориентировок</small></div>
+  </section>
+
+  <section class="home-section">
+    <div class="home-section-head">
+      <div><h3>Активные поиски</h3><p>Последние ориентировки, с которыми сейчас идет работа</p></div>
+    </div>
+    <div class="home-search-columns">
+      <section class="home-search-group">
+        <header><div><span class="home-type-mark pss">ПСС</span><strong>Поиск с собаками</strong></div><button type="button" data-home-menu-status="active" data-home-menu-type="ПСС" aria-label="Открыть все ПСС">→</button></header>
+        <div id="homeActivePss" class="home-case-list"></div>
+      </section>
+      <section class="home-search-group">
+        <header><div><span class="home-type-mark ptp">ПТП</span><strong>Пеший поиск</strong></div><button type="button" data-home-menu-status="active" data-home-menu-type="ПТП" aria-label="Открыть все ПТП">→</button></header>
+        <div id="homeActivePtp" class="home-case-list"></div>
+      </section>
+    </div>
+  </section>
+
+  <section class="home-section home-recent-section">
+    <div class="home-section-head">
+      <div><h3>Последние ориентировки</h3><p>Недавно созданные и перенесенные в архив записи</p></div>
+      <button type="button" data-home-menu-status="archive" class="home-text-action">Открыть архив</button>
+    </div>
+    <div id="homeRecentCases" class="home-recent-list"></div>
+  </section>
+</main>
 
 <main id="layout" class="layout">
   <section class="card form-card">
@@ -305,6 +372,6 @@
 </dialog>
 
 <script src="vendor/jspdf.umd.min.js"></script>
-<script type="module" src="app-v5.js?v=34"></script>
+<script type="module" src="app-v5.js?v=35"></script>
 </body>
 </html>
