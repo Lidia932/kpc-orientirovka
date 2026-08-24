@@ -79,7 +79,10 @@ service cloud.firestore {
           )
         )
       );
-      allow delete: if false;
+      allow delete: if admin()
+        && userId != request.auth.uid
+        && resource.data.approved == false
+        && resource.data.role == 'member';
     }
 
     match /cases/{caseId} {

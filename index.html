@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600&family=Roboto+Condensed:wght@400;500&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg">
-  <link rel="stylesheet" href="styles.css?v=35">
+  <link rel="stylesheet" href="styles.css?v=36">
   <title>КПЦ Симбирск — ориентировка</title>
 </head>
 <body class="auth-loading">
@@ -129,17 +129,13 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15h8"/><path d="M8 11h2"/><path d="M8 19h5"/></svg>
         <span><strong>Создать PDF</strong><small>Открыть форму ориентировки</small></span>
       </button>
-      <button id="homeActiveBtn" class="home-action" type="button">
+      <button id="homeActiveBtn" class="home-action" type="button" aria-expanded="false" aria-controls="homeActiveSection">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         <span><strong>Активный поиск</strong><small>ПСС и ПТП</small></span>
       </button>
-      <button id="homeArchiveBtn" class="home-action" type="button">
+      <button id="homeArchiveBtn" class="home-action" type="button" aria-expanded="false" aria-controls="homeArchiveSection">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
         <span><strong>Архив</strong><small>Открыть сохраненные поиски</small></span>
-      </button>
-      <button id="homeUsersBtn" class="home-action" type="button" hidden>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        <span><strong>Пользователи</strong><small>Доступ и роли</small></span>
       </button>
     </div>
   </section>
@@ -151,18 +147,36 @@
     <div><span id="homeTotalCount">0</span><small>Всего ориентировок</small></div>
   </section>
 
-  <section class="home-section">
+  <section id="homeActiveSection" class="home-section home-expandable-section" hidden>
     <div class="home-section-head">
       <div><h3>Активные поиски</h3><p>Последние ориентировки, с которыми сейчас идет работа</p></div>
+      <button type="button" class="home-section-close" data-home-close="active" aria-label="Свернуть активные поиски">×</button>
     </div>
     <div class="home-search-columns">
       <section class="home-search-group">
-        <header><div><span class="home-type-mark pss">ПСС</span><strong>Поиск с собаками</strong></div><button type="button" data-home-menu-status="active" data-home-menu-type="ПСС" aria-label="Открыть все ПСС">→</button></header>
+        <header><div><span class="home-type-mark pss">ПСС</span><strong>Поиск с собаками</strong></div></header>
         <div id="homeActivePss" class="home-case-list"></div>
       </section>
       <section class="home-search-group">
-        <header><div><span class="home-type-mark ptp">ПТП</span><strong>Пеший поиск</strong></div><button type="button" data-home-menu-status="active" data-home-menu-type="ПТП" aria-label="Открыть все ПТП">→</button></header>
+        <header><div><span class="home-type-mark ptp">ПТП</span><strong>Пеший поиск</strong></div></header>
         <div id="homeActivePtp" class="home-case-list"></div>
+      </section>
+    </div>
+  </section>
+
+  <section id="homeArchiveSection" class="home-section home-expandable-section" hidden>
+    <div class="home-section-head">
+      <div><h3>Архив</h3><p>Последние завершенные поиски по направлениям</p></div>
+      <button type="button" class="home-section-close" data-home-close="archive" aria-label="Свернуть архив">×</button>
+    </div>
+    <div class="home-search-columns">
+      <section class="home-search-group">
+        <header><div><span class="home-type-mark pss">ПСС</span><strong>Поиск с собаками</strong></div></header>
+        <div id="homeArchivePss" class="home-case-list"></div>
+      </section>
+      <section class="home-search-group">
+        <header><div><span class="home-type-mark ptp">ПТП</span><strong>Пеший поиск</strong></div></header>
+        <div id="homeArchivePtp" class="home-case-list"></div>
       </section>
     </div>
   </section>
@@ -367,11 +381,12 @@
       <div><h2>Пользователи</h2><p>Управляйте доступом участников и правами администраторов.</p></div>
       <button id="closeUsersBtn" class="icon-close" type="button" aria-label="Закрыть">×</button>
     </div>
+    <p id="usersMessage" class="users-message" aria-live="polite"></p>
     <div id="usersList" class="users-list"></div>
   </div>
 </dialog>
 
 <script src="vendor/jspdf.umd.min.js"></script>
-<script type="module" src="app-v5.js?v=35"></script>
+<script type="module" src="app-v5.js?v=36"></script>
 </body>
 </html>
