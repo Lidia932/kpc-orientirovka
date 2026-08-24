@@ -19,17 +19,7 @@
       "files": [
         {
           "name": "tracks",
-          "accept": [
-            "application/octet-stream",
-            "application/gpx+xml",
-            "application/xml",
-            "text/xml",
-            "text/plain",
-            "application/vnd.ant.fit",
-            "application/vnd.garmin.tcx+xml",
-            "application/vnd.google-earth.kml+xml",
-            "application/vnd.google-earth.kmz"
-          ]
+          "accept": ["*/*"]
         }
       ]
     }
