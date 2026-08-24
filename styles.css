@@ -12,6 +12,9 @@
 .menu-user-info{display:grid;gap:2px;min-width:0}
 .menu-user-info strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
 .menu-user-info span{overflow-wrap:anywhere;color:#707078;font-size:11px}
+.status-wrap .badge{display:inline-flex}
+.menu-install{width:100%;margin-bottom:8px;text-align:left;background:#2f7d45;color:#fff}
+.menu-install:hover{background:#276b3b}
 .save-case{background:#2f7d45;color:#fff;border-color:#246438}
 .save-case:hover{background:#276b3b}
 
