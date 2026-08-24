@@ -60,5 +60,35 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'archivedAt', 'archivedBy']);
       allow delete: if approved() && resource.data.status == 'active';
     }
+
+    match /notes/{noteId} {
+      allow read: if approved();
+      allow create: if approved()
+        && request.resource.data.keys().hasOnly([
+          'caseId', 'contentHtml', 'image', 'imageType',
+          'authorId', 'authorName', 'authorEmail', 'createdAt', 'updatedAt'
+        ])
+        && exists(/databases/$(database)/documents/cases/$(request.resource.data.caseId))
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.authorEmail == request.auth.token.email
+        && request.resource.data.authorName.size() <= 120
+        && request.resource.data.contentHtml.size() <= 20000
+        && request.resource.data.image.size() <= 600000
+        && request.resource.data.imageType in ['', 'image/jpeg'];
+      allow update: if approved()
+        && (resource.data.authorId == request.auth.uid || admin())
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'contentHtml', 'image', 'imageType', 'updatedAt'
+        ])
+        && request.resource.data.contentHtml.size() <= 20000
+        && request.resource.data.image.size() <= 600000
+        && request.resource.data.imageType in ['', 'image/jpeg'];
+      allow delete: if approved()
+        && (
+          resource.data.authorId == request.auth.uid
+          || admin()
+          || !exists(/databases/$(database)/documents/cases/$(resource.data.caseId))
+        );
+    }
   }
 }

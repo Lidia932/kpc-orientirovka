@@ -158,6 +158,38 @@
       <button id="deleteCaseBtn" class="danger" type="button">Удалить ориентировку</button>
       <button id="archiveCaseBtn" class="primary" type="button">Убрать в архив</button>
     </div>
+    <section class="notes-section" aria-labelledby="notesTitle">
+      <div class="notes-head">
+        <div><h3 id="notesTitle">Заметки</h3><p>Общая история поиска</p></div>
+        <span id="notesCount" class="notes-count">0</span>
+      </div>
+      <div id="noteComposer" class="note-composer">
+        <div class="note-toolbar" role="toolbar" aria-label="Форматирование заметки">
+          <button type="button" data-note-command="bold" title="Полужирный"><strong>Ж</strong></button>
+          <button type="button" data-note-command="italic" title="Курсив"><em>К</em></button>
+          <button type="button" data-note-command="underline" title="Подчёркнутый"><u>Ч</u></button>
+          <button type="button" data-note-command="insertUnorderedList" title="Маркированный список">•</button>
+          <button type="button" data-note-command="insertOrderedList" title="Нумерованный список">1.</button>
+        </div>
+        <div id="noteEditor" class="note-editor" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Добавьте информацию о поиске…"></div>
+        <div class="note-media-actions">
+          <label class="note-media-button" for="notePhotoInput">Добавить фото</label>
+          <input id="notePhotoInput" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+        </div>
+        <div id="noteAttachments" class="note-attachments" hidden>
+          <div id="noteImagePreviewWrap" class="note-attachment" hidden>
+            <img id="noteImagePreview" alt="Фото для заметки">
+            <button id="removeNoteImageBtn" type="button">Убрать фото</button>
+          </div>
+        </div>
+        <div class="note-composer-actions">
+          <button id="saveNoteBtn" class="primary" type="button">Добавить заметку</button>
+          <button id="cancelNoteEditBtn" class="ghost" type="button" hidden>Отменить редактирование</button>
+        </div>
+        <p id="noteMessage" class="note-message"></p>
+      </div>
+      <div id="notesList" class="notes-list"></div>
+    </section>
   </section>
 </main>
 
@@ -194,6 +226,6 @@
   </div>
 </dialog>
 
-<script type="module" src="app-v5.js?v=23"></script>
+<script type="module" src="app-v5.js?v=24"></script>
 </body>
 </html>
