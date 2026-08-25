@@ -120,6 +120,7 @@
 .case-status.info{background:#e4f0f5;color:#35677a}
 .info-search-action{grid-column:1/-1;background:#e5f0f4;color:#315f70;border:1px solid #aac8d3}
 .info-search-action:hover{background:#d6e8ee;border-color:#83adbc}
+.info-search-action.to-info{order:-1}
 .info-search-action.return-active{background:#e3f3e7;color:#28643a;border-color:#a9d1b4}.info-search-action.return-active:hover{background:#d3ebd9;border-color:#81b990}
 .case-message{min-height:20px;margin:10px 0 0;color:#66531e;font-size:13px;line-height:1.4}
 .case-message a{color:#355f78;font-weight:700}
