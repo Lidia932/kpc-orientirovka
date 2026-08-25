@@ -17,7 +17,7 @@
       document.documentElement.dataset.theme = 'light';
     }
   </script>
-  <link rel="stylesheet" href="styles.css?v=52">
+  <link rel="stylesheet" href="styles.css?v=53">
   <title>КПЦ Симбирск — ориентировка</title>
 </head>
 <body class="auth-loading">
@@ -385,6 +385,25 @@
   </div>
 </dialog>
 
+<dialog id="openTrackDialog" class="app-dialog open-track-dialog">
+  <div>
+    <div class="dialog-head">
+      <div><h2>Открыть трек</h2><p>Передайте файл в установленное приложение или сохраните на устройство.</p></div>
+      <button id="openTrackCloseBtn" class="icon-close" type="button" aria-label="Закрыть">×</button>
+    </div>
+    <div class="open-track-file">
+      <span id="openTrackFileIcon" class="track-file-icon"></span>
+      <div><strong id="openTrackFileName"></strong><span id="openTrackFileSize"></span></div>
+    </div>
+    <p id="openTrackMessage" class="tracks-message" aria-live="polite"></p>
+    <div class="open-track-actions">
+      <button id="openTrackShareBtn" class="primary" type="button">Выбрать приложение</button>
+      <button id="openTrackDownloadBtn" class="ghost" type="button">Скачать файл</button>
+      <a id="openTrackDriveLink" class="track-drive-link" target="_blank" rel="noopener">Открыть на Google Drive</a>
+    </div>
+  </div>
+</dialog>
+
 <dialog id="sharedTracksDialog" class="app-dialog shared-tracks-dialog">
   <div>
     <div class="dialog-head">
@@ -482,6 +501,6 @@
 </dialog>
 
 <script src="vendor/jspdf.umd.min.js"></script>
-<script type="module" src="app-v5.js?v=52"></script>
+<script type="module" src="app-v5.js?v=53"></script>
 </body>
 </html>

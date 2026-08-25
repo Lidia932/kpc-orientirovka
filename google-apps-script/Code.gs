@@ -20,6 +20,7 @@ function doPost(event) {
     deleteArchive: 'kpc-archive-delete',
     setCaseStatus: 'kpc-case-status',
     uploadTrack: 'kpc-track-upload',
+    openTrack: 'kpc-track-open',
     deleteTrack: 'kpc-track-delete'
   };
   const responseType = responseTypes[action] || 'kpc-drive-archive';
@@ -43,6 +44,14 @@ function doPost(event) {
       }
       deleteTrack_(cleanId_(parameters.trackId), idToken, user.localId, profile.role === 'admin');
       return responsePage_({type: responseType, nonce: nonce, ok: true});
+    }
+
+    if (action === 'openTrack') {
+      if (!profile || profile.approved !== true) {
+        throw new Error('Доступ к открытию треков не подтвержден.');
+      }
+      const trackFile = readTrack_(cleanId_(parameters.trackId), idToken);
+      return responsePage_({type: responseType, nonce: nonce, ok: true, file: trackFile});
     }
 
     if (!profile || profile.approved !== true || profile.role !== 'admin') {
@@ -226,6 +235,33 @@ function deleteTrack_(trackId, idToken, userId, isAdmin) {
     console.error('Track metadata delete failed: ' + response.getResponseCode() + ' ' + response.getContentText());
     throw new Error('Не удалось удалить карточку трека.');
   }
+}
+
+function readTrack_(trackId, idToken) {
+  const document = getFirestoreDocument_(idToken, 'tracks', trackId);
+  if (!document) throw new Error('Трек не найден.');
+  const driveFileId = firestoreString_(document, 'driveFileId');
+  if (!driveFileId) throw new Error('Файл трека не найден на Google Drive.');
+
+  let file;
+  try {
+    file = DriveApp.getFileById(driveFileId);
+  } catch (error) {
+    throw new Error('Файл трека не найден на Google Drive.');
+  }
+  if (file.isTrashed()) throw new Error('Файл трека не найден на Google Drive.');
+
+  const blob = file.getBlob();
+  const bytes = blob.getBytes();
+  if (!bytes.length || bytes.length > MAX_TRACK_BYTES) {
+    throw new Error('Размер трека должен быть не больше 15 МБ.');
+  }
+  return {
+    name: cleanTrackFileName_(firestoreString_(document, 'fileName') || file.getName()),
+    type: cleanTrackMimeType_(firestoreString_(document, 'mimeType') || blob.getContentType()),
+    size: bytes.length,
+    base64: Utilities.base64Encode(bytes)
+  };
 }
 
 function getTrackCaseFolder_(caseId) {
@@ -659,7 +695,10 @@ function userError_(error, action) {
     'Неверные данные служебной учетной записи Firebase.',
     'Не удалось авторизовать служебную учетную запись Firebase.',
     'Доступ к загрузке треков не подтвержден.',
+    'Доступ к открытию треков не подтвержден.',
     'Доступ к удалению треков не подтвержден.',
+    'Трек не найден.',
+    'Файл трека не найден на Google Drive.',
     'Треки можно добавлять только в активный поиск.',
     'Удалять можно только собственные треки.',
     'Не удалось удалить карточку трека.',
@@ -687,6 +726,8 @@ function userError_(error, action) {
         ? 'Не удалось удалить архивную запись.'
         : action === 'setCaseStatus'
           ? 'Не удалось изменить состояние поиска.'
+          : action === 'openTrack'
+            ? 'Не удалось подготовить файл трека.'
         : 'Не удалось сохранить PDF на Google Drive.';
 }
 
