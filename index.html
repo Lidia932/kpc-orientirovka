@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600&family=Roboto+Condensed:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="manifest" href="manifest.webmanifest?v=49">
+  <link rel="manifest" href="manifest.webmanifest?v=50">
   <link rel="icon" href="icon.svg">
   <script>
     try {
@@ -17,7 +17,7 @@
       document.documentElement.dataset.theme = 'light';
     }
   </script>
-  <link rel="stylesheet" href="styles.css?v=49">
+  <link rel="stylesheet" href="styles.css?v=50">
   <title>КПЦ Симбирск — ориентировка</title>
 </head>
 <body class="auth-loading">
@@ -119,6 +119,17 @@
             <div id="activePtp" class="case-links"></div>
           </div>
         </details>
+        <details class="menu-group" data-status="info">
+          <summary><span class="menu-section-title"><svg class="menu-section-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7h.01"/></svg><span>Инфопоиск</span></span></summary>
+          <div class="menu-subgroup" data-type="ПСС">
+            <div class="menu-subhead"><span>ПСС</span><span id="infoPssCount" class="menu-count">0</span></div>
+            <div id="infoPss" class="case-links"></div>
+          </div>
+          <div class="menu-subgroup" data-type="ПТП">
+            <div class="menu-subhead"><span>ПТП</span><span id="infoPtpCount" class="menu-count">0</span></div>
+            <div id="infoPtp" class="case-links"></div>
+          </div>
+        </details>
         <details class="menu-group" data-status="archive">
           <summary><span class="menu-section-title"><svg class="menu-section-icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg><span>Архив</span></span></summary>
           <div class="menu-subgroup" data-type="ПСС">
@@ -155,7 +166,11 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         <span><strong>Активный поиск</strong><small>ПСС и ПТП</small></span>
       </button>
-      <button id="homeArchiveBtn" class="home-action" type="button" aria-expanded="false" aria-controls="homeArchiveSection">
+      <button id="homeInfoBtn" class="home-action" type="button" aria-expanded="false" aria-controls="homeInfoSection">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7h.01"/></svg>
+        <span><strong>Инфопоиск</strong><small>Поиски в ожидании информации</small></span>
+      </button>
+      <button id="homeArchiveBtn" class="home-action home-action-wide" type="button" aria-expanded="false" aria-controls="homeArchiveSection">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
         <span><strong>Архив</strong><small>Открыть сохраненные поиски</small></span>
       </button>
@@ -165,6 +180,7 @@
   <section class="home-stats" aria-label="Сводка по ориентировкам">
     <button type="button" data-home-menu-status="active" data-home-menu-type="ПСС"><span id="homeActivePssCount">0</span><small>Активных ПСС</small></button>
     <button type="button" data-home-menu-status="active" data-home-menu-type="ПТП"><span id="homeActivePtpCount">0</span><small>Активных ПТП</small></button>
+    <button type="button" data-home-menu-status="info"><span id="homeInfoCount">0</span><small>В инфопоиске</small></button>
     <button type="button" data-home-menu-status="archive"><span id="homeArchiveCount">0</span><small>В архиве</small></button>
     <div><span id="homeTotalCount">0</span><small>Всего ориентировок</small></div>
   </section>
@@ -182,6 +198,23 @@
       <section class="home-search-group">
         <header><div><span class="home-type-mark ptp">ПТП</span></div></header>
         <div id="homeActivePtp" class="home-case-list"></div>
+      </section>
+    </div>
+  </section>
+
+  <section id="homeInfoSection" class="home-section home-expandable-section" hidden>
+    <div class="home-section-head">
+      <div><h3>Инфопоиск</h3><p>Приостановленные поиски, по которым ожидается информация</p></div>
+      <button type="button" class="home-section-close" data-home-close="info" aria-label="Свернуть инфопоиск">×</button>
+    </div>
+    <div class="home-search-columns">
+      <section class="home-search-group">
+        <header><div><span class="home-type-mark pss">ПСС</span></div></header>
+        <div id="homeInfoPss" class="home-case-list"></div>
+      </section>
+      <section class="home-search-group">
+        <header><div><span class="home-type-mark ptp">ПТП</span></div></header>
+        <div id="homeInfoPtp" class="home-case-list"></div>
       </section>
     </div>
   </section>
@@ -205,7 +238,7 @@
 
   <section class="home-section home-recent-section">
     <div class="home-section-head">
-      <div><h3>Последние ориентировки</h3><p>Недавно созданные и перенесенные в архив записи</p></div>
+      <div><h3>Последние ориентировки</h3><p>Недавно созданные и перемещенные записи</p></div>
       <button type="button" data-home-menu-status="archive" class="home-text-action">Открыть архив</button>
     </div>
     <div id="homeRecentCases" class="home-recent-list"></div>
@@ -323,6 +356,7 @@
     <div id="caseActions" class="case-actions">
       <button id="deleteCaseBtn" class="danger" type="button">Удалить ориентировку</button>
       <button id="archiveCaseBtn" class="primary" type="button">Убрать в архив</button>
+      <button id="infoCaseBtn" class="info-search-action" type="button">Перевести в инфопоиск</button>
     </div>
     <p id="caseMessage" class="case-message" aria-live="polite"></p>
   </section>
@@ -448,6 +482,6 @@
 </dialog>
 
 <script src="vendor/jspdf.umd.min.js"></script>
-<script type="module" src="app-v5.js?v=49"></script>
+<script type="module" src="app-v5.js?v=50"></script>
 </body>
 </html>

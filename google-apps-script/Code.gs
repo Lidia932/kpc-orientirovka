@@ -18,6 +18,7 @@ function doPost(event) {
   const responseTypes = {
     deleteAuthUser: 'kpc-user-delete',
     deleteArchive: 'kpc-archive-delete',
+    setCaseStatus: 'kpc-case-status',
     uploadTrack: 'kpc-track-upload',
     deleteTrack: 'kpc-track-delete'
   };
@@ -73,10 +74,25 @@ function doPost(event) {
       return responsePage_({type: responseType, nonce: nonce, ok: true});
     }
 
+    if (action === 'setCaseStatus') {
+      setCaseStatus_(
+        cleanId_(parameters.caseId),
+        cleanText_(parameters.targetStatus, 20),
+        user.localId
+      );
+      return responsePage_({type: responseType, nonce: nonce, ok: true});
+    }
+
     const caseId = cleanId_(parameters.caseId);
     const fileName = cleanFileName_(parameters.fileName);
     const pdfBytes = decodePdf_(parameters.pdfBase64);
+    const caseDocument = getFirestoreDocument_(idToken, 'cases', caseId);
+    const caseStatus = firestoreString_(caseDocument, 'status');
+    if (caseStatus !== 'active' && caseStatus !== 'info') {
+      throw new Error('В архив можно убрать только активный поиск или инфопоиск.');
+    }
     const file = saveArchiveFile_(caseId, fileName, pdfBytes);
+    completeArchiveMetadata_(caseId, file, user.localId);
     return responsePage_({
       type: responseType,
       nonce: nonce,
@@ -409,6 +425,81 @@ function deleteArchive_(caseId) {
   PropertiesService.getScriptProperties().deleteProperty('archive_' + caseId);
 }
 
+function setCaseStatus_(caseId, targetStatus, userId) {
+  if (targetStatus !== 'active' && targetStatus !== 'info') {
+    throw new Error('Неверное состояние поиска.');
+  }
+  const accessToken = getFirebaseAdminAccessToken_();
+  const url = firestoreDocumentUrl_('cases', caseId);
+  const readResponse = UrlFetchApp.fetch(url, {
+    method: 'get',
+    headers: {Authorization: 'Bearer ' + accessToken},
+    muteHttpExceptions: true
+  });
+  if (readResponse.getResponseCode() !== 200) {
+    throw new Error('Не удалось проверить состояние поиска.');
+  }
+  const document = JSON.parse(readResponse.getContentText());
+  const currentStatus = firestoreString_(document, 'status');
+  if (!(
+    (currentStatus === 'active' && targetStatus === 'info')
+    || (currentStatus === 'info' && targetStatus === 'active')
+  )) {
+    throw new Error('Этот переход между состояниями недоступен.');
+  }
+  const patchUrl = url
+    + '?updateMask.fieldPaths=status'
+    + '&updateMask.fieldPaths=statusChangedAt'
+    + '&updateMask.fieldPaths=statusChangedBy';
+  const response = UrlFetchApp.fetch(patchUrl, {
+    method: 'patch',
+    contentType: 'application/json',
+    headers: {Authorization: 'Bearer ' + accessToken},
+    payload: JSON.stringify({fields: {
+      status: {stringValue: targetStatus},
+      statusChangedAt: {timestampValue: new Date().toISOString()},
+      statusChangedBy: {stringValue: userId}
+    }}),
+    muteHttpExceptions: true
+  });
+  if (response.getResponseCode() !== 200) {
+    console.error('Case status update failed: ' + response.getResponseCode() + ' ' + response.getContentText());
+    throw new Error('Не удалось изменить состояние поиска.');
+  }
+}
+
+function completeArchiveMetadata_(caseId, file, userId) {
+  const accessToken = getFirebaseAdminAccessToken_();
+  const url = firestoreDocumentUrl_('cases', caseId)
+    + '?updateMask.fieldPaths=status'
+    + '&updateMask.fieldPaths=archiveUrl'
+    + '&updateMask.fieldPaths=driveFileId'
+    + '&updateMask.fieldPaths=archiveFileName'
+    + '&updateMask.fieldPaths=archivedAt'
+    + '&updateMask.fieldPaths=archivedBy'
+    + '&updateMask.fieldPaths=poster'
+    + '&updateMask.fieldPaths=data'
+    + '&updateMask.fieldPaths=createdByEmail';
+  const response = UrlFetchApp.fetch(url, {
+    method: 'patch',
+    contentType: 'application/json',
+    headers: {Authorization: 'Bearer ' + accessToken},
+    payload: JSON.stringify({fields: {
+      status: {stringValue: 'archive'},
+      archiveUrl: {stringValue: file.getUrl()},
+      driveFileId: {stringValue: file.getId()},
+      archiveFileName: {stringValue: file.getName()},
+      archivedAt: {timestampValue: new Date().toISOString()},
+      archivedBy: {stringValue: userId}
+    }}),
+    muteHttpExceptions: true
+  });
+  if (response.getResponseCode() !== 200) {
+    console.error('Archive metadata update failed: ' + response.getResponseCode() + ' ' + response.getContentText());
+    throw new Error('PDF сохранен, но не удалось обновить архивную запись.');
+  }
+}
+
 function base64UrlJson_(value) {
   return Utilities.base64EncodeWebSafe(
     JSON.stringify(value),
@@ -554,6 +645,12 @@ function userError_(error, action) {
     'Не удалось проверить архивную запись.',
     'Не удалось удалить PDF с Google Drive.',
     'Не удалось удалить архивную запись из базы.',
+    'Неверное состояние поиска.',
+    'Не удалось проверить состояние поиска.',
+    'Этот переход между состояниями недоступен.',
+    'Не удалось изменить состояние поиска.',
+    'В архив можно убрать только активный поиск или инфопоиск.',
+    'PDF сохранен, но не удалось обновить архивную запись.',
     'Нельзя удалить собственную учетную запись.',
     'Удалять можно только заявки со статусом «Ожидает».',
     'Не удалось проверить права пользователя.',
@@ -588,6 +685,8 @@ function userError_(error, action) {
       ? 'Не удалось удалить учетную запись пользователя.'
       : action === 'deleteArchive'
         ? 'Не удалось удалить архивную запись.'
+        : action === 'setCaseStatus'
+          ? 'Не удалось изменить состояние поиска.'
         : 'Не удалось сохранить PDF на Google Drive.';
 }
 
