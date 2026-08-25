@@ -173,7 +173,12 @@ service cloud.firestore {
         && request.resource.data.driveFileId.size() <= 200
         && request.resource.data.url.matches('https://drive\\.google\\.com/.*')
         && request.resource.data.authorName.size() <= 120;
-      allow update: if false;
+      allow update: if admin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fileName'])
+        && request.resource.data.fileName is string
+        && request.resource.data.fileName.size() >= 5
+        && request.resource.data.fileName.size() <= 200
+        && request.resource.data.fileName.matches('.*\\.([gG][pP][xX](\\.[bB][iI][nN])?|[kK][mM][lL]|[kK][mM][zZ]|[tT][cC][xX]|[fF][iI][tT])$');
       allow delete: if approved()
         && (resource.data.authorId == request.auth.uid || admin());
     }

@@ -20,6 +20,7 @@ function doPost(event) {
     deleteArchive: 'kpc-archive-delete',
     setCaseStatus: 'kpc-case-status',
     uploadTrack: 'kpc-track-upload',
+    renameTrack: 'kpc-track-rename',
     openTrack: 'kpc-track-open',
     deleteTrack: 'kpc-track-delete'
   };
@@ -44,6 +45,18 @@ function doPost(event) {
       }
       deleteTrack_(cleanId_(parameters.trackId), idToken, user.localId, profile.role === 'admin');
       return responsePage_({type: responseType, nonce: nonce, ok: true});
+    }
+
+    if (action === 'renameTrack') {
+      if (!profile || profile.approved !== true || profile.role !== 'admin') {
+        throw new Error('Переименовывать треки могут только администраторы.');
+      }
+      const track = renameTrack_(
+        cleanId_(parameters.trackId),
+        cleanTrackFileName_(parameters.fileName),
+        idToken
+      );
+      return responsePage_({type: responseType, nonce: nonce, ok: true, track: track});
     }
 
     if (action === 'openTrack') {
@@ -235,6 +248,45 @@ function deleteTrack_(trackId, idToken, userId, isAdmin) {
     console.error('Track metadata delete failed: ' + response.getResponseCode() + ' ' + response.getContentText());
     throw new Error('Не удалось удалить карточку трека.');
   }
+}
+
+function renameTrack_(trackId, fileName, idToken) {
+  const document = getFirestoreDocument_(idToken, 'tracks', trackId);
+  if (!document) throw new Error('Трек не найден.');
+  const previousName = cleanTrackFileName_(firestoreString_(document, 'fileName'));
+  if (trackFileExtension_(previousName) !== trackFileExtension_(fileName)) {
+    throw new Error('Расширение файла менять нельзя.');
+  }
+  if (previousName === fileName) return {id: trackId, fileName: fileName};
+
+  const driveFileId = firestoreString_(document, 'driveFileId');
+  let file;
+  try {
+    file = DriveApp.getFileById(driveFileId);
+  } catch (error) {
+    throw new Error('Файл трека не найден на Google Drive.');
+  }
+  if (file.isTrashed()) throw new Error('Файл трека не найден на Google Drive.');
+
+  file.setName(fileName);
+  const patchUrl = firestoreDocumentUrl_('tracks', trackId) + '?updateMask.fieldPaths=fileName';
+  const response = UrlFetchApp.fetch(patchUrl, {
+    method: 'patch',
+    contentType: 'application/json',
+    headers: {Authorization: 'Bearer ' + idToken},
+    payload: JSON.stringify({fields: {fileName: {stringValue: fileName}}}),
+    muteHttpExceptions: true
+  });
+  if (response.getResponseCode() !== 200) {
+    try {
+      file.setName(previousName);
+    } catch (rollbackError) {
+      console.error('Track rename rollback failed: ' + rollbackError);
+    }
+    console.error('Track metadata rename failed: ' + response.getResponseCode() + ' ' + response.getContentText());
+    throw new Error('Не удалось переименовать трек.');
+  }
+  return {id: trackId, fileName: fileName};
 }
 
 function readTrack_(trackId, idToken) {
@@ -649,6 +701,11 @@ function cleanTrackFileName_(value) {
   return result;
 }
 
+function trackFileExtension_(fileName) {
+  const match = String(fileName || '').match(/(\.gpx\.bin|\.gpx|\.kml|\.kmz|\.tcx|\.fit)$/i);
+  return match ? match[1].toLowerCase() : '';
+}
+
 function cleanTrackMimeType_(value) {
   const result = cleanText_(value, 120).trim().toLowerCase();
   if (!result || !/^[a-z0-9.+-]+\/[a-z0-9.+-]+$/.test(result)) {
@@ -697,11 +754,14 @@ function userError_(error, action) {
     'Доступ к загрузке треков не подтвержден.',
     'Доступ к открытию треков не подтвержден.',
     'Доступ к удалению треков не подтвержден.',
+    'Переименовывать треки могут только администраторы.',
     'Трек не найден.',
     'Файл трека не найден на Google Drive.',
     'Треки можно добавлять только в активный поиск.',
     'Удалять можно только собственные треки.',
     'Не удалось удалить карточку трека.',
+    'Расширение файла менять нельзя.',
+    'Не удалось переименовать трек.',
     'Не удалось сохранить карточку трека.',
     'Не удалось проверить данные активного поиска.',
     'Файл трека не передан.',
@@ -728,6 +788,8 @@ function userError_(error, action) {
           ? 'Не удалось изменить состояние поиска.'
           : action === 'openTrack'
             ? 'Не удалось подготовить файл трека.'
+          : action === 'renameTrack'
+            ? 'Не удалось переименовать трек.'
         : 'Не удалось сохранить PDF на Google Drive.';
 }
 

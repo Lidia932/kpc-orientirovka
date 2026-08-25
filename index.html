@@ -17,7 +17,7 @@
       document.documentElement.dataset.theme = 'light';
     }
   </script>
-  <link rel="stylesheet" href="styles.css?v=56">
+  <link rel="stylesheet" href="styles.css?v=57">
   <title>КПЦ Симбирск — ориентировка</title>
 </head>
 <body class="auth-loading">
@@ -390,6 +390,40 @@
   </div>
 </dialog>
 
+<dialog id="trackNamesDialog" class="app-dialog track-names-dialog">
+  <div>
+    <div class="dialog-head">
+      <div><h2>Названия треков</h2><p>Оставьте исходные названия или измените их перед загрузкой.</p></div>
+      <button id="trackNamesCloseBtn" class="icon-close" type="button" aria-label="Закрыть">×</button>
+    </div>
+    <div id="trackNamesList" class="track-names-list"></div>
+    <p id="trackNamesMessage" class="tracks-message" aria-live="polite"></p>
+    <div class="dialog-actions">
+      <button id="trackNamesCancelBtn" class="ghost" type="button">Отмена</button>
+      <button id="trackNamesConfirmBtn" class="primary" type="button">Продолжить загрузку</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="renameTrackDialog" class="app-dialog rename-track-dialog">
+  <form id="renameTrackForm">
+    <div class="dialog-head">
+      <div><h2>Переименовать трек</h2><p>Новое название будет видно всем участникам поиска.</p></div>
+      <button id="renameTrackCloseBtn" class="icon-close" type="button" aria-label="Закрыть">×</button>
+    </div>
+    <label for="renameTrackName">Название</label>
+    <div class="track-name-field">
+      <input id="renameTrackName" type="text" maxlength="190" autocomplete="off" required>
+      <span id="renameTrackSuffix"></span>
+    </div>
+    <p id="renameTrackMessage" class="tracks-message" aria-live="polite"></p>
+    <div class="dialog-actions">
+      <button id="renameTrackCancelBtn" class="ghost" type="button">Отмена</button>
+      <button id="renameTrackSaveBtn" class="primary" type="submit">Сохранить</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="openTrackDialog" class="app-dialog open-track-dialog">
   <div>
     <div class="dialog-head">
@@ -509,6 +543,6 @@
 </dialog>
 
 <script src="vendor/jspdf.umd.min.js"></script>
-<script type="module" src="app-v5.js?v=56"></script>
+<script type="module" src="app-v5.js?v=57"></script>
 </body>
 </html>
