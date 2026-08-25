@@ -30,6 +30,7 @@ let notesReady=false;
 let unsubscribeTracks=null,tracksCaseId=null,savedTracks=[],tracksReady=false,uploadingTracks=false;
 let openingTrackId='',preparedTrack=null;
 const THEME_KEY='kpc-theme';
+const TRACKS_COLLAPSED_KEY='kpc-tracks-collapsed';
 const TRACK_EXTENSIONS=new Set(['gpx','gpx.bin','kml','kmz','tcx','fit']);
 const MAX_TRACK_FILE_BYTES=15*1024*1024;
 const MAX_TRACK_FILES=10;
@@ -80,6 +81,8 @@ async function createSavedCase(type){if(savingCase)return;savingCase=true;$('sav
 
 function applyTheme(theme){const dark=theme==='dark';document.documentElement.dataset.theme=dark?'dark':'light';$('themeToggle').checked=dark;$('themeToggle').setAttribute('aria-label',dark?'Включена ночная тема. Переключить на дневную':'Включена дневная тема. Переключить на ночную');document.querySelector('meta[name="theme-color"]').content=dark?'#202326':'#b90000';try{localStorage.setItem(THEME_KEY,dark?'dark':'light')}catch{}}
 function initialTheme(){try{return localStorage.getItem(THEME_KEY)==='dark'?'dark':'light'}catch{return'light'}}
+function initialTracksCollapsed(){try{return localStorage.getItem(TRACKS_COLLAPSED_KEY)==='1'}catch{return false}}
+function setTracksCollapsed(collapsed,persist=false){$('tracksSection').classList.toggle('collapsed',collapsed);$('tracksBody').hidden=collapsed;$('tracksToggle').setAttribute('aria-expanded',String(!collapsed));$('tracksToggle').title=collapsed?'Развернуть список треков':'Свернуть список треков';if(persist)try{localStorage.setItem(TRACKS_COLLAPSED_KEY,collapsed?'1':'0')}catch{}}
 function trackExtension(fileName){const normalized=String(fileName||'').toLowerCase();if(normalized.endsWith('.gpx.bin'))return'gpx.bin';const extension=normalized.split('.').pop();return TRACK_EXTENSIONS.has(extension)?extension:'file'}
 function trackFileSize(bytes){if(!Number.isFinite(bytes))return'';if(bytes<1024)return`${bytes} Б`;if(bytes<1024*1024)return`${(bytes/1024).toFixed(bytes<10240?1:0)} КБ`;return`${(bytes/1024/1024).toFixed(1)} МБ`}
 function trackDate(timestamp){if(!timestamp)return'Загружается…';return new Intl.DateTimeFormat('ru-RU',{dateStyle:'medium',timeStyle:'short'}).format(timestamp)}
@@ -267,6 +270,7 @@ $('sharedTracksCloseBtn').onclick=closeSharedTracks;$('sharedTracksCancelBtn').o
 $('deleteCaseBtn').onclick=deleteCurrentCase;$('archiveCaseBtn').onclick=archiveCurrentCase;$('infoCaseBtn').onclick=changeInfoSearchStatus;window.addEventListener('popstate',route);
 $('saveNoteBtn').onclick=saveNote;$('cancelNoteEditBtn').onclick=()=>resetNoteComposer();$('removeNoteImageBtn').onclick=()=>{releaseEditorImage();renderNoteAttachment()};
 $('trackFilesInput').onchange=event=>uploadTracks(event.target.files);
+$('tracksToggle').onclick=()=>setTracksCollapsed($('tracksToggle').getAttribute('aria-expanded')==='true',true);
 $('notePhotoInput').onchange=async event=>{const file=event.target.files[0];if(!file)return;$('noteMessage').textContent='Подготавливаю фотографию…';try{const bytes=await compressNotePhoto(file);setEditorImage(bytes);$('noteMessage').textContent='Фотография добавлена.'}catch(error){console.error(error);$('noteMessage').textContent=noteErrorText(error);event.target.value=''}};
 document.querySelectorAll('[data-note-command]').forEach(button=>{button.onmousedown=event=>event.preventDefault();button.onclick=()=>{document.execCommand(button.dataset.noteCommand,false,null);$('noteEditor').focus()}});
 $('logoutBtn').onclick=logout;$('pendingLogoutBtn').onclick=logout;$('pendingRefreshBtn').onclick=async()=>{if(!currentUser)return;$('pendingMessage').textContent='Проверяю…';try{const snapshot=await getDoc(doc(db,'users',currentUser.uid));$('pendingMessage').textContent=snapshot.data()?.approved?'Доступ открыт. Загружаю данные…':'Подтверждения пока нет.'}catch{$('pendingMessage').textContent='Не удалось проверить доступ.'}};
@@ -294,4 +298,4 @@ window.addEventListener('online',net);window.addEventListener('offline',net);
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredPrompt=event;markInstallation(false);$('installBtn').hidden=false});
 window.addEventListener('appinstalled',()=>{deferredPrompt=null;markInstallation(true);$('installBtn').hidden=true});
 $('installBtn').onclick=async()=>{if(!deferredPrompt){alert('Откройте меню Chrome и выберите «Установить приложение». Если приложение уже установлено, откройте его через меню приложений Chrome.');return}deferredPrompt.prompt();const choice=await deferredPrompt.userChoice;deferredPrompt=null;if(choice.outcome==='accepted'){markInstallation(true);$('installBtn').hidden=true}};
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));if(document.fonts)document.fonts.ready.then(render);applyTheme(initialTheme());load();renderMenu();renderTracks();net();updateInstallButton();setPersistence(auth,browserLocalPersistence).catch(console.error);onAuthStateChanged(auth,user=>{if(user)handleAuthenticatedUser(user);else{if(unsubscribeProfile){unsubscribeProfile();unsubscribeProfile=null}stopCaseSubscription();stopUsersSubscription();currentUser=null;currentProfile=null;showSignedOut()}});
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));if(document.fonts)document.fonts.ready.then(render);applyTheme(initialTheme());setTracksCollapsed(initialTracksCollapsed());load();renderMenu();renderTracks();net();updateInstallButton();setPersistence(auth,browserLocalPersistence).catch(console.error);onAuthStateChanged(auth,user=>{if(user)handleAuthenticatedUser(user);else{if(unsubscribeProfile){unsubscribeProfile();unsubscribeProfile=null}stopCaseSubscription();stopUsersSubscription();currentUser=null;currentProfile=null;showSignedOut()}});

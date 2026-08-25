@@ -1,6 +1,6 @@
-const CACHE='kpc-orientirovka-v54';
+const CACHE='kpc-orientirovka-v55';
 const SHARE_CACHE='kpc-shared-tracks-v1';
-const ASSETS=['./','./index.html','./styles.css?v=54','./app-v5.js?v=54','./firebase-config.js','./manifest.webmanifest?v=54','./template.jpg','./icon.svg','./icon-192.png','./icon-512.png','./vendor/jspdf.umd.min.js'];
+const ASSETS=['./','./index.html','./styles.css?v=55','./app-v5.js?v=55','./firebase-config.js','./manifest.webmanifest?v=55','./template.jpg','./icon.svg','./icon-192.png','./icon-512.png','./vendor/jspdf.umd.min.js'];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()));
 });

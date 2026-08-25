@@ -17,7 +17,7 @@
       document.documentElement.dataset.theme = 'light';
     }
   </script>
-  <link rel="stylesheet" href="styles.css?v=54">
+  <link rel="stylesheet" href="styles.css?v=55">
   <title>КПЦ Симбирск — ориентировка</title>
 </head>
 <body class="auth-loading">
@@ -300,13 +300,16 @@
       <img id="savedPoster" alt="Сохранённая ориентировка">
     </div>
     <section id="tracksSection" class="tracks-section" aria-labelledby="tracksTitle">
-      <div class="tracks-head">
+      <button id="tracksToggle" class="tracks-head" type="button" aria-expanded="true" aria-controls="tracksBody">
         <div>
           <h3 id="tracksTitle">Треки поиска</h3>
           <p>Маршруты участников и кинологических расчётов</p>
         </div>
-        <span id="tracksCount" class="tracks-count">0</span>
-      </div>
+        <span class="tracks-head-actions">
+          <span id="tracksCount" class="tracks-count">0</span>
+          <svg class="tracks-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </span>
+      </button>
       <div id="trackUploader" class="track-uploader">
         <label class="track-upload-button" for="trackFilesInput">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
@@ -316,7 +319,9 @@
         <p>GPX, GPX.BIN, KML, KMZ, TCX или FIT · до 15 МБ на файл · не более 10 файлов за раз</p>
       </div>
       <p id="tracksMessage" class="tracks-message" aria-live="polite"></p>
-      <div id="tracksList" class="tracks-list"></div>
+      <div id="tracksBody" class="tracks-body">
+        <div id="tracksList" class="tracks-list"></div>
+      </div>
     </section>
     <section class="notes-section" aria-labelledby="notesTitle">
       <div class="notes-head">
@@ -501,6 +506,6 @@
 </dialog>
 
 <script src="vendor/jspdf.umd.min.js"></script>
-<script type="module" src="app-v5.js?v=54"></script>
+<script type="module" src="app-v5.js?v=55"></script>
 </body>
 </html>
