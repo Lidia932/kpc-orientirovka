@@ -1,6 +1,7 @@
 const ARCHIVE_FOLDER_ID = '10UIpRNpDoHZEb27ZD-AkhS0OQHgswBvN';
 const FIREBASE_PROJECT_ID = 'kpc-simbirsk';
 const FIREBASE_API_KEY = 'AIzaSyDVNnz42UmNSFjyJK4AzsneHEw4ljt53gA';
+const OWNER_EMAIL = 'lidiya.lynx@gmail.com';
 const SITE_ORIGIN = 'https://lidia932.github.io';
 const MAX_PDF_BYTES = 35 * 1024 * 1024;
 const MAX_TRACK_BYTES = 15 * 1024 * 1024;
@@ -16,6 +17,7 @@ function doPost(event) {
   const action = cleanText_(parameters.action, 40);
   const responseTypes = {
     deleteAuthUser: 'kpc-user-delete',
+    deleteArchive: 'kpc-archive-delete',
     uploadTrack: 'kpc-track-upload',
     deleteTrack: 'kpc-track-delete'
   };
@@ -61,6 +63,14 @@ function doPost(event) {
         nonce: nonce,
         ok: true
       });
+    }
+
+    if (action === 'deleteArchive') {
+      if (String(user.email || '').toLowerCase() !== OWNER_EMAIL) {
+        throw new Error('Удалять архивные записи может только владелец.');
+      }
+      deleteArchive_(cleanId_(parameters.caseId));
+      return responsePage_({type: responseType, nonce: nonce, ok: true});
     }
 
     const caseId = cleanId_(parameters.caseId);
@@ -302,7 +312,7 @@ function deleteFirebaseAuthUser_(userId) {
 
 function getFirebaseAdminAccessToken_() {
   const cache = CacheService.getScriptCache();
-  const cachedToken = cache.get('firebase_admin_access_token');
+  const cachedToken = cache.get('firebase_admin_access_token_v2');
   if (cachedToken) return cachedToken;
 
   const credentialsJson = PropertiesService.getScriptProperties()
@@ -320,7 +330,7 @@ function getFirebaseAdminAccessToken_() {
   const header = base64UrlJson_({alg: 'RS256', typ: 'JWT'});
   const claims = base64UrlJson_({
     iss: credentials.client_email,
-    scope: 'https://www.googleapis.com/auth/identitytoolkit',
+    scope: 'https://www.googleapis.com/auth/identitytoolkit https://www.googleapis.com/auth/datastore',
     aud: 'https://oauth2.googleapis.com/token',
     iat: now,
     exp: now + 3600
@@ -347,8 +357,56 @@ function getFirebaseAdminAccessToken_() {
     throw new Error('Не удалось авторизовать служебную учетную запись Firebase.');
   }
 
-  cache.put('firebase_admin_access_token', payload.access_token, 3300);
+  cache.put('firebase_admin_access_token_v2', payload.access_token, 3300);
   return payload.access_token;
+}
+
+function deleteArchive_(caseId) {
+  const accessToken = getFirebaseAdminAccessToken_();
+  const url = firestoreDocumentUrl_('cases', caseId);
+  const readResponse = UrlFetchApp.fetch(url, {
+    method: 'get',
+    headers: {Authorization: 'Bearer ' + accessToken},
+    muteHttpExceptions: true
+  });
+
+  if (readResponse.getResponseCode() === 404) return;
+  if (readResponse.getResponseCode() !== 200) {
+    console.error('Archive read failed: ' + readResponse.getResponseCode() + ' ' + readResponse.getContentText());
+    throw new Error('Не удалось проверить архивную запись.');
+  }
+
+  const document = JSON.parse(readResponse.getContentText());
+  if (firestoreString_(document, 'status') !== 'archive') {
+    throw new Error('Удалять этой кнопкой можно только архивные записи.');
+  }
+
+  const driveFileId = firestoreString_(document, 'driveFileId');
+  let driveFile = null;
+  if (driveFileId) {
+    try {
+      driveFile = DriveApp.getFileById(driveFileId);
+      driveFile.setTrashed(true);
+    } catch (error) {
+      console.error('Archive PDF delete failed: ' + error);
+      throw new Error('Не удалось удалить PDF с Google Drive.');
+    }
+  }
+
+  const deleteResponse = UrlFetchApp.fetch(url, {
+    method: 'delete',
+    headers: {Authorization: 'Bearer ' + accessToken},
+    muteHttpExceptions: true
+  });
+  if (deleteResponse.getResponseCode() !== 200) {
+    if (driveFile) {
+      try { driveFile.setTrashed(false); } catch (restoreError) { console.error(restoreError); }
+    }
+    console.error('Archive metadata delete failed: ' + deleteResponse.getResponseCode() + ' ' + deleteResponse.getContentText());
+    throw new Error('Не удалось удалить архивную запись из базы.');
+  }
+
+  PropertiesService.getScriptProperties().deleteProperty('archive_' + caseId);
 }
 
 function base64UrlJson_(value) {
@@ -491,6 +549,11 @@ function userError_(error, action) {
     'Авторизация пользователя истекла. Войдите на сайт заново.',
     'Пользователь не найден.',
     'Действие доступно только администраторам.',
+    'Удалять архивные записи может только владелец.',
+    'Удалять этой кнопкой можно только архивные записи.',
+    'Не удалось проверить архивную запись.',
+    'Не удалось удалить PDF с Google Drive.',
+    'Не удалось удалить архивную запись из базы.',
     'Нельзя удалить собственную учетную запись.',
     'Удалять можно только заявки со статусом «Ожидает».',
     'Не удалось проверить права пользователя.',
@@ -523,7 +586,9 @@ function userError_(error, action) {
     ? message
     : action === 'deleteAuthUser'
       ? 'Не удалось удалить учетную запись пользователя.'
-      : 'Не удалось сохранить PDF на Google Drive.';
+      : action === 'deleteArchive'
+        ? 'Не удалось удалить архивную запись.'
+        : 'Не удалось сохранить PDF на Google Drive.';
 }
 
 function responsePage_(payload) {
