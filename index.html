@@ -18,7 +18,7 @@
       document.documentElement.dataset.theme = 'light';
     }
   </script>
-  <link rel="stylesheet" href="styles.css?v=60">
+  <link rel="stylesheet" href="styles.css?v=61">
   <title>КПЦ Симбирск — ориентировка</title>
 </head>
 <body class="auth-loading">
@@ -265,6 +265,13 @@
 
   <section class="wind-workspace">
     <form id="windRoseForm" class="wind-controls">
+      <div class="wind-task-choice">
+        <div><strong>Тип поиска</strong><small>Меняет оценку распространения запаха, но не направление ветра</small></div>
+        <div class="wind-task-switch" role="radiogroup" aria-label="Тип поиска">
+          <label><input type="radio" name="windTask" value="pss" checked><span><b>ПСС</b><small>Живой человек</small></span></label>
+          <label><input type="radio" name="windTask" value="ptp"><span><b>ПТП</b><small>Поиск погибшего</small></span></label>
+        </div>
+      </div>
       <div class="wind-step-head"><span>1</span><div><h3>Место</h3><p>Найдите место или отметьте его на карте.</p></div></div>
       <div class="wind-location-search">
         <label for="windPlaceSearch">Населенный пункт или адрес</label>
@@ -279,7 +286,7 @@
         </button>
       </div>
       <div id="windMap" class="wind-map" aria-label="Карта выбранной местности"></div>
-      <p class="wind-map-hint">Нажмите на карту, чтобы точно указать место поиска. Буква «С» на компасе показывает реальный север карты.</p>
+      <p class="wind-map-hint">Нажмите на карту, чтобы точно указать место поиска. Откройте компас и разрешите датчик направления, чтобы сориентироваться на местности.</p>
 
       <div class="wind-step-head"><span>2</span><div><h3>Источник данных</h3><p>Автоматический расчет или наблюдения метеостанции.</p></div></div>
       <div class="wind-source-switch" role="radiogroup" aria-label="Источник метеоданных">
@@ -328,12 +335,17 @@
         <article><span>Средняя сила</span><strong id="windDominantSpeed">—</strong><small>в преобладающем направлении</small></article>
         <article><span>Макс. порыв</span><strong id="windMaxGust">—</strong><small>за выбранный период</small></article>
         <article class="wind-scent-card"><span>Запах переносило</span><strong id="windScentDirection">—</strong><small>противоположно направлению ветра</small></article>
+        <article class="wind-condition-card"><span id="windTaskResultLabel">Условия ПСС</span><strong id="windScentCondition">—</strong><small id="windScentConditionNote">для запахового шлейфа</small></article>
       </div>
       <div class="wind-chart-shell"><canvas id="windRoseCanvas" width="900" height="900" aria-label="Диаграмма розы ветров"></canvas></div>
       <div class="wind-legend" aria-label="Скорость ветра">
         <span><i class="speed-1"></i>&lt; 2 м/с</span><span><i class="speed-2"></i>2–4 м/с</span><span><i class="speed-3"></i>4–6 м/с</span><span><i class="speed-4"></i>6–8 м/с</span><span><i class="speed-5"></i>&gt; 8 м/с</span>
       </div>
       <p id="windResultNote" class="wind-result-note"></p>
+      <details class="wind-brief-details">
+        <summary>Краткая сводка результата</summary>
+        <div id="windBriefSummary"></div>
+      </details>
       <details class="wind-data-details"><summary>Источник и исходные данные</summary><div id="windDataMeta"></div></details>
       <div class="wind-result-actions"><button id="windSaveImageBtn" class="secondary" type="button">Скачать картинку</button><button id="windSaveDataBtn" class="ghost" type="button">Скачать исходные данные</button></div>
     </section>
@@ -639,6 +651,6 @@
 
 <script src="vendor/jspdf.umd.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script type="module" src="app-v5.js?v=60"></script>
+<script type="module" src="app-v5.js?v=61"></script>
 </body>
 </html>

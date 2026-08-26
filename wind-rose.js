@@ -1,4 +1,7 @@
 const DIRECTIONS=['С','ССВ','СВ','ВСВ','В','ВЮВ','ЮВ','ЮЮВ','Ю','ЮЮЗ','ЮЗ','ЗЮЗ','З','ЗСЗ','СЗ','ССЗ'];
+const WIND_NAMES=['Северный ветер','Северо-северо-восточный ветер','Северо-восточный ветер','Востоко-северо-восточный ветер','Восточный ветер','Востоко-юго-восточный ветер','Юго-восточный ветер','Юго-юго-восточный ветер','Южный ветер','Юго-юго-западный ветер','Юго-западный ветер','Западо-юго-западный ветер','Западный ветер','Западо-северо-западный ветер','Северо-западный ветер','Северо-северо-западный ветер'];
+const FROM_DIRECTIONS=['с севера','с северо-северо-востока','с северо-востока','с востоко-северо-востока','с востока','с востоко-юго-востока','с юго-востока','с юго-юго-востока','с юга','с юго-юго-запада','с юго-запада','с западо-юго-запада','с запада','с западо-северо-запада','с северо-запада','с северо-северо-запада'];
+const TO_DIRECTIONS=['на север','на северо-северо-восток','на северо-восток','на востоко-северо-восток','на восток','на востоко-юго-восток','на юго-восток','на юго-юго-восток','на юг','на юго-юго-запад','на юго-запад','на западо-юго-запад','на запад','на западо-северо-запад','на северо-запад','на северо-северо-запад'];
 const SPEED_COLORS=['#9bd4df','#386fd8','#42a75b','#e1c832','#e95454'];
 const RP5_DIRECTIONS=new Map([
   ['ветер, дующий с севера',0],['ветер, дующий с северо-северо-востока',22.5],['ветер, дующий с северо-востока',45],['ветер, дующий с востоко-северо-востока',67.5],
@@ -10,7 +13,7 @@ const RP5_DIRECTIONS=new Map([
 const $=id=>document.getElementById(id);
 const STATION_RADIUS_KM=300;
 const MAX_NEARBY_STATIONS=20;
-const state={map:null,marker:null,stationMarker:null,stationLine:null,stationLayers:null,windLayers:null,place:'Выбранная точка',rows:[],meta:null,summary:null,rp5:null,stationCatalog:null,stationsPromise:null,nearbyStations:[],selectedStation:null};
+const state={map:null,marker:null,stationMarker:null,stationLine:null,stationLayers:null,windLayers:null,place:'Выбранная точка',rows:[],meta:null,summary:null,rp5:null,stationCatalog:null,stationsPromise:null,nearbyStations:[],selectedStation:null,compassShell:null,compassHeading:null,compassActive:false,compassAbsoluteSeen:false,placeSearchTimer:null,placeSearchController:null,placeSearchSequence:0};
 
 function pad(value){return String(value).padStart(2,'0')}
 function localInputValue(date){return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`}
@@ -21,8 +24,13 @@ function finite(value){const text=String(value??'').trim();if(!text)return null;
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]))}
 function directionIndex(degrees){return Math.round((((degrees%360)+360)%360)/22.5)%16}
 function directionName(degrees){return DIRECTIONS[directionIndex(degrees)]}
+function windName(degrees){return WIND_NAMES[directionIndex(degrees)]}
+function directionFrom(degrees){return FROM_DIRECTIONS[directionIndex(degrees)]}
+function directionTo(degrees){return TO_DIRECTIONS[directionIndex(degrees)]}
+function capitalize(value){return value.charAt(0).toUpperCase()+value.slice(1)}
 function speedClass(speed){return speed<2?0:speed<4?1:speed<6?2:speed<8?3:4}
 function scentDegrees(degrees){return (degrees+180)%360}
+function clamp(value,min,max){return Math.min(max,Math.max(min,value))}
 
 function setMessage(text,kind=''){
   const node=$('windMessage');
@@ -37,17 +45,44 @@ function setDefaultPeriod(hours=24){
   $('windEnd').value=localInputValue(end);
 }
 
+function updateCompassVisual(){
+  const shell=state.compassShell;if(!shell)return;const heading=state.compassHeading;
+  const north=shell.querySelector('.wind-compass-north'),wind=shell.querySelector('.wind-compass-wind'),scent=shell.querySelector('.wind-compass-scent'),readout=shell.querySelector('.wind-compass-readout');
+  north.style.transform=`translateX(-50%) rotate(${heading==null?0:-heading}deg)`;
+  if(state.summary){wind.hidden=false;scent.hidden=false;wind.style.transform=`translateX(-50%) rotate(${state.summary.dominantDegrees-(heading||0)}deg)`;scent.style.transform=`translateX(-50%) rotate(${scentDegrees(state.summary.dominantDegrees)-(heading||0)}deg)`}else{wind.hidden=true;scent.hidden=true}
+  readout.textContent=heading==null?'Датчик направления выключен':`Верх телефона: ${directionName(heading)} · ${Math.round(heading)}°`;
+}
+
+function handleDeviceOrientation(event){
+  if(event.type==='deviceorientationabsolute')state.compassAbsoluteSeen=true;if(state.compassAbsoluteSeen&&event.type!=='deviceorientationabsolute'&&event.webkitCompassHeading==null)return;
+  let heading=finite(event.webkitCompassHeading);if(heading==null&&finite(event.alpha)!=null){const screenAngle=finite(screen.orientation?.angle)||finite(window.orientation)||0;heading=(360-finite(event.alpha)+screenAngle+360)%360}
+  if(heading==null)return;state.compassHeading=heading;const status=state.compassShell?.querySelector('.wind-compass-status');if(status)status.textContent='Поворачивайте телефон, пока его верх не будет направлен в нужную сторону.';updateCompassVisual();
+}
+
+async function startDynamicCompass(){
+  const status=state.compassShell?.querySelector('.wind-compass-status');if(!status||state.compassActive)return;
+  if(!window.DeviceOrientationEvent){status.textContent='На этом устройстве нет доступного датчика направления.';return}
+  try{
+    if(typeof DeviceOrientationEvent.requestPermission==='function'){
+      let permission;try{permission=await DeviceOrientationEvent.requestPermission(true)}catch(error){permission=await DeviceOrientationEvent.requestPermission()}
+      if(permission!=='granted'){status.textContent='Доступ к датчику не разрешен. Разрешите движение и ориентацию в настройках браузера.';return}
+    }
+    state.compassActive=true;status.textContent='Жду данные компаса…';window.addEventListener('deviceorientationabsolute',handleDeviceOrientation,true);window.addEventListener('deviceorientation',handleDeviceOrientation,true);
+  }catch(error){console.error(error);status.textContent='Не удалось включить компас. Проверьте разрешение датчиков для сайта.'}
+}
+
 function compassControl(){
   const Control=L.Control.extend({
     options:{position:'topright'},
     onAdd(){
       const shell=L.DomUtil.create('div','wind-compass-control is-collapsed');
-      shell.innerHTML=`<button type="button" aria-expanded="false" aria-label="Открыть компас" title="Компас"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15 9-2 5-5 2 2-5 5-2Z"/></svg></button><div class="wind-compass-panel"><strong>С</strong><span class="east">В</span><span class="south">Ю</span><span class="west">З</span><i></i><small>Север карты</small></div>`;
-      const button=shell.querySelector('button');
-      button.addEventListener('click',()=>{
+      shell.innerHTML=`<button class="wind-compass-toggle" type="button" aria-expanded="false" aria-label="Открыть полевой компас" title="Полевой компас"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15 9-2 5-5 2 2-5 5-2Z"/></svg></button><div class="wind-compass-panel"><div class="wind-compass-face"><span class="north">С</span><span class="east">В</span><span class="south">Ю</span><span class="west">З</span><i class="wind-compass-pointer wind-compass-north"></i><i class="wind-compass-pointer wind-compass-wind" hidden></i><i class="wind-compass-pointer wind-compass-scent" hidden></i><b></b></div><strong class="wind-compass-readout">Датчик направления выключен</strong><small class="wind-compass-status">Нажмите значок компаса и разрешите доступ к датчику.</small><div class="wind-compass-legend"><span><i></i>откуда дул ветер</span><span><i></i>куда несет запах</span></div></div>`;
+      const button=shell.querySelector('.wind-compass-toggle');state.compassShell=shell;updateCompassVisual();
+      button.addEventListener('click',async()=>{
         const collapsed=shell.classList.toggle('is-collapsed');
         button.setAttribute('aria-expanded',String(!collapsed));
-        button.setAttribute('aria-label',collapsed?'Открыть компас':'Скрыть компас');
+        button.setAttribute('aria-label',collapsed?'Открыть полевой компас':'Скрыть полевой компас');
+        if(!collapsed)await startDynamicCompass();
       });
       L.DomEvent.disableClickPropagation(shell);
       return shell;
@@ -93,7 +128,7 @@ function setStationLocation(latitude,longitude,station=null){
 function stationFromRow(row){return{id:row[0],name:row[1],country:row[2],latitude:row[3],longitude:row[4],wmo:row[5],icao:row[6],usaf:row[7]}}
 async function loadWeatherStations(){
   if(state.stationCatalog)return state.stationCatalog;
-  if(!state.stationsPromise)state.stationsPromise=fetch('./data/weather-stations.json?v=60').then(response=>{if(!response.ok)throw new Error('station-catalog');return response.json()}).then(data=>{state.stationCatalog=data.stations.map(stationFromRow);return state.stationCatalog}).catch(error=>{state.stationsPromise=null;throw error});
+  if(!state.stationsPromise)state.stationsPromise=fetch('./data/weather-stations.json?v=61').then(response=>{if(!response.ok)throw new Error('station-catalog');return response.json()}).then(data=>{state.stationCatalog=data.stations.map(stationFromRow);return state.stationCatalog}).catch(error=>{state.stationsPromise=null;throw error});
   return state.stationsPromise;
 }
 
@@ -132,23 +167,31 @@ async function refreshNearbyStations(fitMap=false){
   finally{button.disabled=false}
 }
 
-async function searchPlace(){
-  const query=$('windPlaceSearch').value.trim(),results=$('windPlaceResults');
-  if(query.length<2){setMessage('Введите не менее двух символов для поиска места.','error');return}
-  $('windPlaceSearchBtn').disabled=true;setMessage('Ищу место…');
+function photonResultLabel(item){const properties=item.properties||{};return[properties.name,[properties.street,properties.housenumber].filter(Boolean).join(' '),properties.district,properties.city,properties.state,properties.country].filter((value,index,items)=>value&&items.indexOf(value)===index).join(', ')}
+async function searchPlace({suggest=false}={}){
+  const query=$('windPlaceSearch').value.trim(),results=$('windPlaceResults'),requestId=++state.placeSearchSequence;
+  if(query.length<2){results.hidden=true;if(!suggest)setMessage('Введите не менее двух символов для поиска места.','error');return}
+  state.placeSearchController?.abort();state.placeSearchController=new AbortController();
+  if(suggest){results.innerHTML='<div class="wind-place-loading">Ищу подходящие адреса…</div>';results.hidden=false}else{$('windPlaceSearchBtn').disabled=true;setMessage('Ищу место…')}
   try{
-    const url='https://geocoding-api.open-meteo.com/v1/search?'+new URLSearchParams({name:query,count:'6',language:'ru',format:'json'});
-    const response=await fetch(url);if(!response.ok)throw new Error('geocoding');
-    const data=await response.json(),items=data.results||[];results.replaceChildren();
+    const params=new URLSearchParams({q:query,limit:'6'}),lat=finite($('windLatitude').value),lon=finite($('windLongitude').value);if(lat!=null&&lon!=null){params.set('lat',String(lat));params.set('lon',String(lon))}
+    const response=await fetch(`https://photon.komoot.io/api/?${params}`,{signal:state.placeSearchController.signal});if(!response.ok)throw new Error('geocoding');
+    const data=await response.json();if(requestId!==state.placeSearchSequence)return;const items=data.features||[];results.replaceChildren();
     if(!items.length){results.hidden=true;setMessage('Ничего не найдено. Попробуйте указать соседний населенный пункт.','error');return}
     items.forEach(item=>{
-      const button=document.createElement('button');button.type='button';button.innerHTML=`<strong>${escapeHtml(item.name)}</strong><small>${escapeHtml([item.admin1,item.country].filter(Boolean).join(', '))}</small>`;
-      button.onclick=()=>{const label=[item.name,item.admin1].filter(Boolean).join(', ');$('windPlaceSearch').value=label;results.hidden=true;setLocation(item.latitude,item.longitude,label);setMessage('Место выбрано.','success')};
+      const properties=item.properties||{},coordinates=item.geometry?.coordinates||[],label=photonResultLabel(item),primary=properties.name||properties.street||label;
+      const button=document.createElement('button');button.type='button';button.innerHTML=`<strong>${escapeHtml(primary)}</strong><small>${escapeHtml(label)}</small>`;
+      button.onclick=()=>{$('windPlaceSearch').value=label;results.hidden=true;state.placeSearchController?.abort();setLocation(coordinates[1],coordinates[0],label);setMessage('Место выбрано.','success')};
       results.append(button);
     });
-    results.hidden=false;setMessage('Выберите подходящее место из списка.');
-  }catch(error){console.error(error);setMessage('Не удалось выполнить поиск. Проверьте интернет или укажите координаты на карте.','error')}
-  finally{$('windPlaceSearchBtn').disabled=false}
+    results.hidden=false;if(!suggest)setMessage('Выберите подходящее место из списка.');
+  }catch(error){if(error.name!=='AbortError'){console.error(error);results.hidden=true;setMessage('Не удалось выполнить поиск. Проверьте интернет или укажите координаты на карте.','error')}}
+  finally{if(!suggest)$('windPlaceSearchBtn').disabled=false}
+}
+
+function schedulePlaceSuggestions(){
+  clearTimeout(state.placeSearchTimer);state.placeSearchController?.abort();const query=$('windPlaceSearch').value.trim();if(query.length<2){$('windPlaceResults').hidden=true;return}
+  $('windPlaceResults').innerHTML='<div class="wind-place-loading">Ищу подходящие адреса…</div>';$('windPlaceResults').hidden=false;state.placeSearchTimer=setTimeout(()=>searchPlace({suggest:true}),400);
 }
 
 function locateUser(){
@@ -181,19 +224,21 @@ function parseRp5Direction(value){
   const number=finite(text);return number!=null&&number>=0&&number<=360?number:null;
 }
 
+function parseRp5Number(value,{zeroText=false}={}){const text=String(value??'').trim().replace(',','.');if(zeroText&&/(нет осадков|осадков нет|следы осадков)/i.test(text))return 0;const match=text.match(/-?\d+(?:\.\d+)?/);return match?finite(match[0]):null}
+
 async function readRp5(file){
   const buffer=await file.arrayBuffer();let text=new TextDecoder('utf-8').decode(buffer);
   if(text.includes('�')||!/(^|;)"?DD"?(;|$)/m.test(text))text=new TextDecoder('windows-1251').decode(buffer);
   const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/),headerIndex=lines.findIndex(line=>/(^|;)"?DD"?(;|$)/.test(line)&&/(^|;)"?Ff"?(;|$)/.test(line));
   if(headerIndex<0)throw new Error('rp5-columns');
   const headers=parseCsvLine(lines[headerIndex]).map(value=>value.replace(/^"|"$/g,'').trim());
-  const dd=headers.findIndex(value=>value==='DD'),ff=headers.findIndex(value=>value==='Ff'),gustIndexes=headers.map((value,index)=>/^ff(?:3|10)$/i.test(value)?index:-1).filter(index=>index>=0),timeIndex=0;
+  const dd=headers.findIndex(value=>value==='DD'),ff=headers.findIndex(value=>value==='Ff'),tempIndex=headers.findIndex(value=>value==='T'),rhIndex=headers.findIndex(value=>value==='U'),precipIndex=headers.findIndex(value=>value==='RRR'),gustIndexes=headers.map((value,index)=>/^ff(?:3|10)$/i.test(value)?index:-1).filter(index=>index>=0),timeIndex=0;
   const rows=[];
   for(const line of lines.slice(headerIndex+1)){
     if(!line.trim())continue;const cells=parseCsvLine(line),dir=parseRp5Direction(cells[dd]),speed=finite(cells[ff]);
     if(dir==null||speed==null)continue;
     const gusts=gustIndexes.map(index=>finite(cells[index])).filter(value=>value!=null);
-    rows.push({time:parseRp5Date(cells[timeIndex]),speed,dir,gust:gusts.length?Math.max(...gusts):null});
+    rows.push({time:parseRp5Date(cells[timeIndex]),speed,dir,gust:gusts.length?Math.max(...gusts):null,temp:tempIndex>=0?parseRp5Number(cells[tempIndex]):null,rh:rhIndex>=0?parseRp5Number(cells[rhIndex]):null,precip:precipIndex>=0?parseRp5Number(cells[precipIndex],{zeroText:true}):null});
   }
   if(!rows.length)throw new Error('rp5-empty');
   const first=parseCsvLine(lines[0],',').map(value=>value.replace(/^#+|^"|"$/g,'').trim()),station=first[0]||file.name,country=first[1]||'',stationId=first[2]||'';
@@ -219,9 +264,9 @@ function updateStationDistance(){
 }
 
 async function fetchOpenMeteoSegment(endpoint,latitude,longitude,start,end){
-  const params=new URLSearchParams({latitude:String(latitude),longitude:String(longitude),start_date:dateOnly(start),end_date:dateOnly(end),hourly:'wind_speed_10m,wind_direction_10m,wind_gusts_10m',wind_speed_unit:'ms',timezone:'auto'});
+  const params=new URLSearchParams({latitude:String(latitude),longitude:String(longitude),start_date:dateOnly(start),end_date:dateOnly(end),hourly:'wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m,relative_humidity_2m,precipitation',wind_speed_unit:'ms',timezone:'auto'});
   const response=await fetch(`${endpoint}?${params}`);if(!response.ok)throw new Error(`weather-${response.status}`);const data=await response.json(),hourly=data.hourly||{};
-  return (hourly.time||[]).map((time,index)=>({time,speed:finite(hourly.wind_speed_10m?.[index]),dir:finite(hourly.wind_direction_10m?.[index]),gust:finite(hourly.wind_gusts_10m?.[index])})).filter(row=>row.time>=start&&row.time<=end);
+  return (hourly.time||[]).map((time,index)=>({time,speed:finite(hourly.wind_speed_10m?.[index]),dir:finite(hourly.wind_direction_10m?.[index]),gust:finite(hourly.wind_gusts_10m?.[index]),temp:finite(hourly.temperature_2m?.[index]),rh:finite(hourly.relative_humidity_2m?.[index]),precip:finite(hourly.precipitation?.[index])})).filter(row=>row.time>=start&&row.time<=end);
 }
 
 async function fetchModelRows(start,end,latitude,longitude){
@@ -236,39 +281,65 @@ function analyzeRows(rows){
   usable.forEach(row=>{const bin=bins[directionIndex(row.dir)];bin.count+=1;bin.speedSum+=row.speed;bin.gustMax=Math.max(bin.gustMax,row.gust||0);bin.classes[speedClass(row.speed)]+=1});
   if(!usable.length)throw new Error('no-wind-data');
   let dominant=0;bins.forEach((bin,index)=>{if(bin.count>bins[dominant].count)dominant=index});
-  const vector=usable.reduce((acc,row)=>{const radians=row.dir*Math.PI/180;acc.x+=Math.sin(radians);acc.y+=Math.cos(radians);return acc},{x:0,y:0}),meanDirection=(Math.atan2(vector.x,vector.y)*180/Math.PI+360)%360;
-  return{bins,total:usable.length,ignored:rows.length-usable.length,dominant,dominantDegrees:dominant*22.5,dominantAverage:bins[dominant].speedSum/bins[dominant].count,maxGust:Math.max(...usable.map(row=>row.gust||0)),meanDirection};
+  const vector=usable.reduce((acc,row)=>{const radians=row.dir*Math.PI/180,weight=Math.max(row.speed,.1);acc.x+=Math.sin(radians)*weight;acc.y+=Math.cos(radians)*weight;acc.weight+=weight;return acc},{x:0,y:0,weight:0}),meanDirection=(Math.atan2(vector.x,vector.y)*180/Math.PI+360)%360,consistency=Math.hypot(vector.x,vector.y)/Math.max(vector.weight,.1);
+  return{bins,total:usable.length,ignored:rows.length-usable.length,dominant,dominantDegrees:dominant*22.5,dominantAverage:bins[dominant].speedSum/bins[dominant].count,maxGust:Math.max(...usable.map(row=>row.gust||0)),meanDirection,consistency};
+}
+
+function currentTaskMode(){return document.querySelector('[name="windTask"]:checked')?.value==='ptp'?'ptp':'pss'}
+function stabilityLabel(value){if(value>=.75)return{label:'высокая',text:'направления хорошо складываются в один основной шлейф'};if(value>=.5)return{label:'средняя',text:'основной сектор заметен, но ветер частично менялся'};if(value>=.25)return{label:'низкая',text:'ветер был переменным, одной средней стрелки недостаточно'};return{label:'очень низкая',text:'направления заметно компенсировали друг друга'}}
+function scentConditionLabel(score){if(score>=70)return'хорошие';if(score>=40)return'средние';if(score>=16)return'низкие';return'очень низкие'}
+function assessScentConditions(rows,mode=currentTaskMode()){
+  const usable=rows.filter(row=>row.speed!=null),scores=[],weatherRows=usable.filter(row=>row.temp!=null||row.rh!=null||row.precip!=null).length;
+  usable.forEach(row=>{
+    const speed=Number(row.speed||0),gust=Number(row.gust||0),temp=finite(row.temp),rh=finite(row.rh),precip=finite(row.precip);let score=62;
+    if(speed<.5)score-=20;else if(speed<=4)score+=10;else if(speed<=8)score-=8;else score-=24;
+    if(gust>0&&gust/Math.max(speed,.2)>=2)score-=10;
+    if(rh!=null){if(rh>=55&&rh<=88)score+=8;else if(rh<30)score-=20;else if(rh<45)score-=10;else if(rh>96)score-=5}
+    if(temp!=null){if(mode==='ptp'){if(temp<=-15)score-=28;else if(temp<=-5)score-=17;else if(temp>=0&&temp<=18)score+=4;else if(temp>30)score-=15}else{if(temp<=-20)score-=14;else if(temp>=0&&temp<=20)score+=6;else if(temp>30)score-=18}}
+    if(precip!=null&&precip>0){const snowLike=temp!=null&&temp<=1;if(snowLike)score-=mode==='ptp'?(precip>=1?24:14):(precip>=1?10:4);else if(precip>=5)score-=24;else if(precip>=1)score-=12;else score-=4}
+    scores.push(clamp(score,0,100));
+  });
+  const score=scores.length?scores.reduce((sum,value)=>sum+value,0)/scores.length:0,coverage=usable.length?weatherRows/usable.length:0,limited=coverage<.5;
+  return{mode,score:Math.round(score),label:scentConditionLabel(score),coverage,limited,modeLabel:mode==='ptp'?'ПТП':'ПСС',modeDescription:mode==='ptp'?'для поиска погибшего: мороз и снег сильнее ограничивают выход запаха':'для поиска живого человека на поверхности: учитывается тепловой поток тела'};
+}
+
+function renderBriefSummary(summary,meta,assessment){
+  const share=Math.round(summary.bins[summary.dominant].count/summary.total*100),stability=stabilityLabel(summary.consistency),distance=meta.distance;
+  $('windBriefSummary').innerHTML=`<ul><li><strong>${escapeHtml(windName(summary.dominantDegrees))}</strong> преобладал ${share}% учтенного времени: воздух двигался ${escapeHtml(directionFrom(summary.dominantDegrees))} ${escapeHtml(directionTo(scentDegrees(summary.dominantDegrees)))}.</li><li>Средняя скорость в основном секторе — <strong>${round(summary.dominantAverage)} м/с</strong>, максимальный порыв — <strong>${round(summary.maxGust)} м/с</strong>.</li><li>Вероятный основной перенос запаха — <strong>${escapeHtml(directionTo(scentDegrees(summary.dominantDegrees)))}.</strong></li><li>Устойчивость направления — <strong>${stability.label}</strong>: ${stability.text}.</li><li>Оценка условий ${assessment.modeLabel} — <strong>${assessment.label}, ${assessment.score}/100</strong>: ${assessment.modeDescription}.${assessment.limited?' Температура, влажность или осадки доступны не для большинства строк, поэтому оценка ограничена данными ветра.':''}</li>${distance>50?`<li>Метеостанция удалена примерно на <strong>${round(distance)} км</strong>; местный ветер может отличаться.</li>`:''}</ul><p>Это ориентировочная рабочая сводка. На месте проверьте ветер у земли, рельеф, лес, застройку и показания собаки.</p>`;
 }
 
 function polarPoint(cx,cy,radius,degrees){const radians=(degrees-90)*Math.PI/180;return[cx+Math.cos(radians)*radius,cy+Math.sin(radians)*radius]}
 function drawSector(ctx,cx,cy,inner,outer,start,end,color){ctx.beginPath();ctx.arc(cx,cy,outer,(start-90)*Math.PI/180,(end-90)*Math.PI/180);ctx.arc(cx,cy,inner,(end-90)*Math.PI/180,(start-90)*Math.PI/180,true);ctx.closePath();ctx.fillStyle=color;ctx.fill()}
-function drawArrow(ctx,cx,cy,degrees,radius,color,label,pointsToCenter=false){const [x,y]=polarPoint(cx,cy,radius,degrees),startX=pointsToCenter?x:cx,startY=pointsToCenter?y:cy,endX=pointsToCenter?cx:x,endY=pointsToCenter?cy:y,angle=Math.atan2(endY-startY,endX-startX);ctx.save();ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(startX,startY);ctx.lineTo(endX,endY);ctx.stroke();ctx.beginPath();ctx.moveTo(endX,endY);ctx.lineTo(endX-Math.cos(angle-.45)*18,endY-Math.sin(angle-.45)*18);ctx.lineTo(endX-Math.cos(angle+.45)*18,endY-Math.sin(angle+.45)*18);ctx.closePath();ctx.fill();ctx.font='700 17px Arial';ctx.textAlign='center';ctx.fillText(label,...polarPoint(cx,cy,radius+28,degrees));ctx.restore()}
+function drawOutlinedText(ctx,text,x,y,color){ctx.save();ctx.font='700 15px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineJoin='round';ctx.strokeStyle='#fff';ctx.lineWidth=4;ctx.strokeText(text,x,y);ctx.fillStyle=color;ctx.fillText(text,x,y);ctx.restore()}
+function drawArrow(ctx,cx,cy,degrees,radius,color,label,pointsToCenter=false){const [x,y]=polarPoint(cx,cy,radius,degrees),startX=pointsToCenter?x:cx,startY=pointsToCenter?y:cy,endX=pointsToCenter?cx:x,endY=pointsToCenter?cy:y,angle=Math.atan2(endY-startY,endX-startX);ctx.save();ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(startX,startY);ctx.lineTo(endX,endY);ctx.stroke();ctx.beginPath();ctx.moveTo(endX,endY);ctx.lineTo(endX-Math.cos(angle-.45)*18,endY-Math.sin(angle-.45)*18);ctx.lineTo(endX-Math.cos(angle+.45)*18,endY-Math.sin(angle+.45)*18);ctx.closePath();ctx.fill();ctx.restore();const labelAngle=(degrees-90)*Math.PI/180,[labelX,labelY]=polarPoint(cx,cy,radius*.62,degrees),offset=19;drawOutlinedText(ctx,label,labelX-Math.sin(labelAngle)*offset,labelY+Math.cos(labelAngle)*offset,color)}
 
 function drawRose(summary,meta){
   const canvas=$('windRoseCanvas'),ctx=canvas.getContext('2d'),dark=document.documentElement.dataset.theme==='dark';canvas.width=900;canvas.height=900;const bg=dark?'#24272a':'#ffffff',ink=dark?'#edf0f2':'#23272a',grid=dark?'#50585d':'#cfd5d8';ctx.fillStyle=bg;ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle=ink;ctx.textAlign='center';ctx.font='700 28px Arial';ctx.fillText('Роза ветров',450,40);ctx.font='16px Arial';ctx.fillStyle=dark?'#b8c0c5':'#667078';ctx.fillText(meta.place,450,68);ctx.fillText(`${formatPeriod(meta.start)} — ${formatPeriod(meta.end)}`,450,93);
+  ctx.fillStyle=ink;ctx.textAlign='center';ctx.font='700 28px Arial';ctx.fillText('Роза ветров',450,40);ctx.font='16px Arial';ctx.fillStyle=dark?'#b8c0c5':'#667078';ctx.fillText(`${meta.place} · ${currentTaskMode()==='ptp'?'ПТП':'ПСС'}`,450,68);ctx.fillText(`${formatPeriod(meta.start)} — ${formatPeriod(meta.end)}`,450,93);
   const cx=450,cy=465,radius=310,maxCount=Math.max(...summary.bins.map(bin=>bin.count),1);
   ctx.strokeStyle=grid;ctx.lineWidth=1;for(let ring=1;ring<=5;ring+=1){ctx.beginPath();ctx.arc(cx,cy,radius*ring/5,0,Math.PI*2);ctx.stroke();ctx.fillStyle=dark?'#abb3b8':'#6f777b';ctx.font='12px Arial';ctx.textAlign='left';ctx.fillText(`${Math.round(maxCount/summary.total*ring/5*100)}%`,cx+5,cy-radius*ring/5+15)}
   for(let index=0;index<16;index+=1){const degrees=index*22.5,[x,y]=polarPoint(cx,cy,radius,degrees);ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(x,y);ctx.stroke();const bin=summary.bins[index];let inner=0;bin.classes.forEach((count,classIndex)=>{if(!count)return;const outer=inner+radius*count/maxCount;drawSector(ctx,cx,cy,inner,outer,degrees-8.5,degrees+8.5,SPEED_COLORS[classIndex]);inner=outer});const [lx,ly]=polarPoint(cx,cy,radius+30,degrees);ctx.fillStyle=ink;ctx.font=`${index===summary.dominant?'700':'500'} 15px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(DIRECTIONS[index],lx,ly)}
-  drawArrow(ctx,cx,cy,summary.dominantDegrees,radius*.72,'#c83d3d','ветер оттуда',true);drawArrow(ctx,cx,cy,scentDegrees(summary.dominantDegrees),radius*.58,'#2f7d66','запах туда');
-  ctx.textBaseline='alphabetic';ctx.textAlign='center';ctx.fillStyle=ink;ctx.font='700 20px Arial';ctx.fillText(`Преобладал ${DIRECTIONS[summary.dominant]}: ${Math.round(summary.bins[summary.dominant].count/summary.total*100)}% времени`,450,835);ctx.font='15px Arial';ctx.fillStyle=dark?'#b8c0c5':'#667078';ctx.fillText(`Средняя сила ${round(summary.dominantAverage)} м/с · максимальный порыв ${round(summary.maxGust)} м/с`,450,864);
+  drawArrow(ctx,cx,cy,summary.dominantDegrees,radius*.72,'#c83d3d',`Ветер ${directionFrom(summary.dominantDegrees)}`,true);drawArrow(ctx,cx,cy,scentDegrees(summary.dominantDegrees),radius*.58,'#2f7d66',`Запах ${directionTo(scentDegrees(summary.dominantDegrees))}`);
+  ctx.textBaseline='alphabetic';ctx.textAlign='center';ctx.fillStyle=ink;ctx.font='700 20px Arial';ctx.fillText(`${windName(summary.dominantDegrees)}: ${Math.round(summary.bins[summary.dominant].count/summary.total*100)}% времени`,450,835);ctx.font='15px Arial';ctx.fillStyle=dark?'#b8c0c5':'#667078';ctx.fillText(`Средняя сила ${round(summary.dominantAverage)} м/с · максимальный порыв ${round(summary.maxGust)} м/с`,450,864);
 }
 
 function destination(latitude,longitude,bearing,distanceKm=8){const radius=6371,br=bearing*Math.PI/180,lat1=latitude*Math.PI/180,lon1=longitude*Math.PI/180,lat2=Math.asin(Math.sin(lat1)*Math.cos(distanceKm/radius)+Math.cos(lat1)*Math.sin(distanceKm/radius)*Math.cos(br)),lon2=lon1+Math.atan2(Math.sin(br)*Math.sin(distanceKm/radius)*Math.cos(lat1),Math.cos(distanceKm/radius)-Math.sin(lat1)*Math.sin(lat2));return[lat2*180/Math.PI,lon2*180/Math.PI]}
 function drawMapDirections(summary){
   if(!state.map)return;state.windLayers.clearLayers();const lat=finite($('windLatitude').value),lon=finite($('windLongitude').value),from=destination(lat,lon,summary.dominantDegrees,6),to=destination(lat,lon,scentDegrees(summary.dominantDegrees),6);
-  L.polyline([from,[lat,lon]],{color:'#c83d3d',weight:5,opacity:.85}).addTo(state.windLayers);L.circleMarker(from,{radius:7,color:'#c83d3d',fillOpacity:1}).bindTooltip(`Ветер приходил с ${DIRECTIONS[summary.dominant]}`,{permanent:false}).addTo(state.windLayers);
-  L.polyline([[lat,lon],to],{color:'#2f7d66',weight:5,dashArray:'9 7',opacity:.9}).addTo(state.windLayers);L.circleMarker(to,{radius:7,color:'#2f7d66',fillOpacity:1}).bindTooltip(`Запах переносило на ${directionName(scentDegrees(summary.dominantDegrees))}`,{permanent:false}).addTo(state.windLayers);
+  L.polyline([from,[lat,lon]],{color:'#c83d3d',weight:5,opacity:.85}).addTo(state.windLayers);L.circleMarker(from,{radius:7,color:'#c83d3d',fillOpacity:1}).bindTooltip(`Ветер приходил ${directionFrom(summary.dominantDegrees)}`,{permanent:false}).addTo(state.windLayers);
+  L.polyline([[lat,lon],to],{color:'#2f7d66',weight:5,dashArray:'9 7',opacity:.9}).addTo(state.windLayers);L.circleMarker(to,{radius:7,color:'#2f7d66',fillOpacity:1}).bindTooltip(`Запах переносило ${directionTo(scentDegrees(summary.dominantDegrees))}`,{permanent:false}).addTo(state.windLayers);
   state.map.fitBounds(L.latLngBounds([from,to]).pad(.45));
 }
 
-function renderResult(summary,meta){
+function renderResult(summary,meta,{scroll=true}={}){
   state.summary=summary;state.meta=meta;$('windResult').hidden=false;$('windResultPlace').textContent=meta.place;$('windSourceBadge').textContent=meta.source;
-  $('windDominantDirection').textContent=`${DIRECTIONS[summary.dominant]} · оттуда`;$('windDominantShare').textContent=`${Math.round(summary.bins[summary.dominant].count/summary.total*100)}% учтенного времени`;
-  $('windDominantSpeed').textContent=`${round(summary.dominantAverage)} м/с`;$('windMaxGust').textContent=summary.maxGust?`${round(summary.maxGust)} м/с`:'Нет данных';$('windScentDirection').textContent=`${directionName(scentDegrees(summary.dominantDegrees))} · туда`;
-  const distance=meta.distance;$('windResultNote').textContent=`Ветер называется по направлению, откуда он приходит. Запах переносится в противоположную сторону.${distance>50?` Метеостанция удалена на ${round(distance)} км — учитывайте возможные местные отличия.`:''}`;
-  $('windDataMeta').innerHTML=`<p><strong>Источник:</strong> ${escapeHtml(meta.source)}</p><p><strong>Место:</strong> ${escapeHtml(meta.place)}</p>${meta.station?`<p><strong>Метеостанция:</strong> ${escapeHtml(meta.station)}</p>`:''}<p><strong>Период:</strong> ${escapeHtml(formatPeriod(meta.start))} — ${escapeHtml(formatPeriod(meta.end))}</p><p><strong>Строк данных:</strong> ${state.rows.length}; учтено ${summary.total}; штиль или неполные строки: ${summary.ignored}.</p><p>Исходные почасовые значения сохраняются в памяти страницы до следующего построения и доступны для скачивания.</p>`;
-  drawRose(summary,meta);drawMapDirections(summary);$('windResult').scrollIntoView({behavior:'smooth',block:'start'});
+  const mode=currentTaskMode(),assessment=assessScentConditions(state.rows,mode),share=Math.round(summary.bins[summary.dominant].count/summary.total*100);
+  $('windDominantDirection').textContent=windName(summary.dominantDegrees);$('windDominantShare').textContent=`Дул ${directionFrom(summary.dominantDegrees)} · ${share}% учтенного времени`;
+  $('windDominantSpeed').textContent=`${round(summary.dominantAverage)} м/с`;$('windMaxGust').textContent=summary.maxGust?`${round(summary.maxGust)} м/с`:'Нет данных';$('windScentDirection').textContent=capitalize(directionTo(scentDegrees(summary.dominantDegrees)));
+  $('windTaskResultLabel').textContent=`Условия ${assessment.modeLabel}`;$('windScentCondition').textContent=`${capitalize(assessment.label)} · ${assessment.score}/100`;$('windScentConditionNote').textContent=assessment.limited?'оценка ограничена доступными полями':'для запахового шлейфа';
+  const distance=meta.distance;$('windResultNote').textContent=`${windName(summary.dominantDegrees)} приходил ${directionFrom(summary.dominantDegrees)}, поэтому основной перенос запаха показан ${directionTo(scentDegrees(summary.dominantDegrees))}.${distance>50?` Метеостанция удалена на ${round(distance)} км — учитывайте возможные местные отличия.`:''}`;
+  renderBriefSummary(summary,meta,assessment);$('windDataMeta').innerHTML=`<p><strong>Источник:</strong> ${escapeHtml(meta.source)}</p><p><strong>Место:</strong> ${escapeHtml(meta.place)}</p><p><strong>Тип поиска:</strong> ${assessment.modeLabel}</p>${meta.station?`<p><strong>Метеостанция:</strong> ${escapeHtml(meta.station)}</p>`:''}<p><strong>Период:</strong> ${escapeHtml(formatPeriod(meta.start))} — ${escapeHtml(formatPeriod(meta.end))}</p><p><strong>Строк данных:</strong> ${state.rows.length}; учтено ${summary.total}; штиль или неполные строки: ${summary.ignored}.</p><p>Исходные почасовые значения сохраняются в памяти страницы до следующего построения и доступны для скачивания.</p>`;
+  drawRose(summary,meta);drawMapDirections(summary);updateCompassVisual();if(scroll)$('windResult').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 async function buildRose(event){
@@ -290,14 +361,15 @@ async function buildRose(event){
 function downloadBlob(blob,fileName){const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=fileName;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(link.href),1000)}
 function saveImage(){if(!state.summary)return;const canvas=$('windRoseCanvas');canvas.toBlob(blob=>blob&&downloadBlob(blob,`roza-vetrov-${dateOnly(state.meta.start)}.png`),'image/png')}
 function saveData(){
-  if(!state.rows.length)return;const lines=['time;wind_direction_deg;wind_direction;wind_speed_ms;wind_gust_ms',...state.rows.map(row=>[row.time||'',row.dir??'',row.dir==null?'':directionName(row.dir),row.speed??'',row.gust??''].join(';'))],text='\uFEFF'+lines.join('\r\n');downloadBlob(new Blob([text],{type:'text/csv;charset=utf-8'}),`wind-data-${dateOnly(state.meta.start)}.csv`);
+  if(!state.rows.length)return;const lines=['time;wind_direction_deg;wind_direction;wind_speed_ms;wind_gust_ms;temperature_c;humidity_percent;precipitation_mm',...state.rows.map(row=>[row.time||'',row.dir??'',row.dir==null?'':directionName(row.dir),row.speed??'',row.gust??'',row.temp??'',row.rh??'',row.precip??''].join(';'))],text='\uFEFF'+lines.join('\r\n');downloadBlob(new Blob([text],{type:'text/csv;charset=utf-8'}),`wind-data-${dateOnly(state.meta.start)}.csv`);
 }
 
 export function initWindRose(){
   setDefaultPeriod();initMap();
-  $('windPlaceSearchBtn').onclick=searchPlace;$('windPlaceSearch').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();searchPlace()}});$('windLocateBtn').onclick=locateUser;
+  $('windPlaceSearchBtn').onclick=searchPlace;$('windPlaceSearch').addEventListener('input',schedulePlaceSuggestions);$('windPlaceSearch').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();searchPlace()}});$('windLocateBtn').onclick=locateUser;
   ['windLatitude','windLongitude'].forEach(id=>$(id).addEventListener('change',()=>setLocation(finite($('windLatitude').value),finite($('windLongitude').value),'Точка по координатам')));
   document.querySelectorAll('[name="windSource"]').forEach(input=>input.onchange=sourceChanged);$('windRp5File').onchange=event=>rp5Selected(event.target.files[0]);$('windPickStationBtn').onclick=()=>refreshNearbyStations(true);
+  document.querySelectorAll('[name="windTask"]').forEach(input=>input.onchange=()=>{if(state.summary&&state.meta)renderResult(state.summary,state.meta,{scroll:false})});
   document.querySelectorAll('[data-wind-hours]').forEach(button=>button.onclick=()=>setDefaultPeriod(Number(button.dataset.windHours)));$('windRoseForm').onsubmit=buildRose;$('windSaveImageBtn').onclick=saveImage;$('windSaveDataBtn').onclick=saveData;
   return{onShow(){initMap();setTimeout(()=>state.map?.invalidateSize(),0);if(state.summary)drawRose(state.summary,state.meta)},onTheme(){if(state.summary)drawRose(state.summary,state.meta)}};
 }
