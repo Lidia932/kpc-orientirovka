@@ -1,6 +1,6 @@
-const CACHE='kpc-orientirovka-v59';
+const CACHE='kpc-orientirovka-v60';
 const SHARE_CACHE='kpc-shared-tracks-v1';
-const ASSETS=['./','./index.html','./styles.css?v=59','./app-v5.js?v=59','./wind-rose.js?v=59','./firebase-config.js','./manifest.webmanifest?v=58','./template.jpg','./icon.svg','./icon-192.png','./icon-512.png','./vendor/jspdf.umd.min.js'];
+const ASSETS=['./','./index.html','./styles.css?v=60','./app-v5.js?v=60','./wind-rose.js?v=60','./data/weather-stations.json?v=60','./firebase-config.js','./manifest.webmanifest?v=58','./template.jpg','./icon.svg','./icon-192.png','./icon-512.png','./vendor/jspdf.umd.min.js'];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()));
 });

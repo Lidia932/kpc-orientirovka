@@ -18,7 +18,7 @@
       document.documentElement.dataset.theme = 'light';
     }
   </script>
-  <link rel="stylesheet" href="styles.css?v=59">
+  <link rel="stylesheet" href="styles.css?v=60">
   <title>КПЦ Симбирск — ориентировка</title>
 </head>
 <body class="auth-loading">
@@ -294,14 +294,16 @@
           <input id="windRp5File" type="file" accept=".csv,text/csv">
         </label>
         <div class="wind-station-location">
-          <label>Широта станции<input id="windStationLatitude" type="number" min="-90" max="90" step="0.000001" placeholder="Необязательно"></label>
-          <label>Долгота станции<input id="windStationLongitude" type="number" min="-180" max="180" step="0.000001" placeholder="Необязательно"></label>
+          <label>Широта станции<input id="windStationLatitude" type="number" readonly placeholder="Не выбрана"></label>
+          <label>Долгота станции<input id="windStationLongitude" type="number" readonly placeholder="Не выбрана"></label>
         </div>
         <button id="windPickStationBtn" class="wind-pick-station" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z"/><circle cx="12" cy="10" r="2"/></svg>
-          <span>Указать станцию на карте</span>
+          <span>Показать ближайшие станции</span>
         </button>
-        <p id="windStationDistance" class="wind-distance-note">Укажите координаты станции, чтобы проверить расстояние до места поиска.</p>
+        <div id="windNearbyStations" class="wind-nearby-stations" hidden></div>
+        <p class="wind-catalog-credit">Каталог станций: <a href="https://dev.meteostat.net/license" target="_blank" rel="noopener">Meteostat и поставщики данных</a>. Список адаптирован для быстрого поиска ближайших станций.</p>
+        <p id="windStationDistance" class="wind-distance-note">Выберите реальную станцию на карте или в списке. До выбора соединительный пунктир не показывается.</p>
       </div>
 
       <div class="wind-step-head"><span>3</span><div><h3>Период</h3><p>Можно выбрать день целиком или точное время до часа.</p></div></div>
@@ -637,6 +639,6 @@
 
 <script src="vendor/jspdf.umd.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script type="module" src="app-v5.js?v=59"></script>
+<script type="module" src="app-v5.js?v=60"></script>
 </body>
 </html>

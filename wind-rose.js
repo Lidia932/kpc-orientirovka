@@ -8,14 +8,16 @@ const RP5_DIRECTIONS=new Map([
 ]);
 
 const $=id=>document.getElementById(id);
-const state={map:null,marker:null,stationMarker:null,stationLine:null,mapTarget:'search',windLayers:null,place:'Выбранная точка',rows:[],meta:null,summary:null,rp5:null};
+const STATION_RADIUS_KM=300;
+const MAX_NEARBY_STATIONS=20;
+const state={map:null,marker:null,stationMarker:null,stationLine:null,stationLayers:null,windLayers:null,place:'Выбранная точка',rows:[],meta:null,summary:null,rp5:null,stationCatalog:null,stationsPromise:null,nearbyStations:[],selectedStation:null};
 
 function pad(value){return String(value).padStart(2,'0')}
 function localInputValue(date){return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`}
 function dateOnly(value){return value.slice(0,10)}
 function formatPeriod(value){return new Intl.DateTimeFormat('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(value))}
 function round(value,digits=1){const factor=10**digits;return Math.round(value*factor)/factor}
-function finite(value){const number=Number(String(value??'').replace(',','.'));return Number.isFinite(number)?number:null}
+function finite(value){const text=String(value??'').trim();if(!text)return null;const number=Number(text.replace(',','.'));return Number.isFinite(number)?number:null}
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]))}
 function directionIndex(degrees){return Math.round((((degrees%360)+360)%360)/22.5)%16}
 function directionName(degrees){return DIRECTIONS[directionIndex(degrees)]}
@@ -60,7 +62,8 @@ function initMap(){
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(state.map);
   compassControl().addTo(state.map);
   state.windLayers=L.layerGroup().addTo(state.map);
-  state.map.on('click',event=>{if(state.mapTarget==='station')setStationLocation(event.latlng.lat,event.latlng.lng);else setLocation(event.latlng.lat,event.latlng.lng,'Точка на карте')});
+  state.stationLayers=L.layerGroup().addTo(state.map);
+  state.map.on('click',event=>setLocation(event.latlng.lat,event.latlng.lng,'Точка на карте'));
   setLocation(54.3142,48.4031,'Ульяновск');
 }
 
@@ -74,17 +77,60 @@ function setLocation(latitude,longitude,label=state.place,zoom=true){
     if(zoom)state.map.setView([lat,lon],Math.max(state.map.getZoom(),11));
   }
   updateStationDistance();
+  if(document.querySelector('[name="windSource"]:checked')?.value==='rp5'&&state.stationCatalog)renderNearbyStations();
 }
 
 function stationIcon(){return L.divIcon({className:'wind-station-marker',html:'<span><b>М</b></span>',iconSize:[30,30],iconAnchor:[15,30]})}
-function setStationLocation(latitude,longitude){
+function stationLabel(station){return `${station.name}${station.wmo?` · WMO ${station.wmo}`:station.icao?` · ${station.icao}`:''}`}
+function setStationLocation(latitude,longitude,station=null){
   if(latitude==null||longitude==null)return;const lat=Number(latitude),lon=Number(longitude);if(!Number.isFinite(lat)||!Number.isFinite(lon))return;
+  state.selectedStation=station;
   $('windStationLatitude').value=lat.toFixed(6);$('windStationLongitude').value=lon.toFixed(6);
-  if(state.map){if(!state.stationMarker)state.stationMarker=L.marker([lat,lon],{draggable:true,icon:stationIcon()}).addTo(state.map).bindTooltip('Метеостанция').on('dragend',event=>{const point=event.target.getLatLng();setStationLocation(point.lat,point.lng)});else state.stationMarker.setLatLng([lat,lon])}
-  state.mapTarget='search';$('windPickStationBtn').classList.remove('active');$('windPickStationBtn').querySelector('span').textContent='Изменить станцию на карте';updateStationDistance();setMessage('Метеостанция отмечена синей меткой.','success');
+  if(state.map){if(!state.stationMarker)state.stationMarker=L.marker([lat,lon],{icon:stationIcon()}).addTo(state.map);else state.stationMarker.setLatLng([lat,lon]);state.stationMarker.unbindTooltip().bindTooltip(station?stationLabel(station):'Выбранная метеостанция')}
+  updateStationDistance();renderNearbyStations();const searchLat=finite($('windLatitude').value),searchLon=finite($('windLongitude').value);if(state.map&&searchLat!=null&&searchLon!=null)state.map.fitBounds([[searchLat,searchLon],[lat,lon]],{padding:[35,35],maxZoom:11});setMessage(station?`Выбрана станция: ${stationLabel(station)}.`:'Метеостанция выбрана.','success');
 }
 
-function pickStationOnMap(){state.mapTarget='station';$('windPickStationBtn').classList.add('active');$('windPickStationBtn').querySelector('span').textContent='Нажмите на станцию на карте';state.map?.getContainer().classList.add('picking-station');setMessage('Нажмите на карте в месте расположения метеостанции.')}
+function stationFromRow(row){return{id:row[0],name:row[1],country:row[2],latitude:row[3],longitude:row[4],wmo:row[5],icao:row[6],usaf:row[7]}}
+async function loadWeatherStations(){
+  if(state.stationCatalog)return state.stationCatalog;
+  if(!state.stationsPromise)state.stationsPromise=fetch('./data/weather-stations.json?v=60').then(response=>{if(!response.ok)throw new Error('station-catalog');return response.json()}).then(data=>{state.stationCatalog=data.stations.map(stationFromRow);return state.stationCatalog}).catch(error=>{state.stationsPromise=null;throw error});
+  return state.stationsPromise;
+}
+
+function renderNearbyStations(){
+  const list=$('windNearbyStations');if(!list||!state.stationLayers)return;
+  state.stationLayers.clearLayers();list.replaceChildren();
+  if(document.querySelector('[name="windSource"]:checked')?.value!=='rp5'||!state.stationCatalog){list.hidden=true;return}
+  const lat=finite($('windLatitude').value),lon=finite($('windLongitude').value);if(lat==null||lon==null){list.hidden=true;return}
+  state.nearbyStations=state.stationCatalog.map(station=>({...station,distance:haversineKm(lat,lon,station.latitude,station.longitude)})).filter(station=>station.distance<=STATION_RADIUS_KM).sort((a,b)=>a.distance-b.distance).slice(0,MAX_NEARBY_STATIONS);
+  if(!state.nearbyStations.length){list.innerHTML='<p>В радиусе 300 км станции с данными о ветре не найдены.</p>';list.hidden=false;return}
+  const heading=document.createElement('div');heading.className='wind-nearby-head';heading.innerHTML=`<strong>Ближайшие метеостанции</strong><small>${state.nearbyStations.length} на карте · каталог Meteostat</small>`;list.append(heading);
+  state.nearbyStations.forEach(station=>{
+    const selected=state.selectedStation?.id===station.id;
+    if(!selected)L.circleMarker([station.latitude,station.longitude],{radius:7,color:'#256b87',weight:2,fillColor:'#fff',fillOpacity:.95}).bindTooltip(`${stationLabel(station)} · ${round(station.distance)} км`).on('click',()=>setStationLocation(station.latitude,station.longitude,station)).addTo(state.stationLayers);
+    const button=document.createElement('button');button.type='button';button.className=selected?'selected':'';button.innerHTML=`<span><strong>${escapeHtml(station.name)}</strong><small>${escapeHtml([station.country,station.wmo?`WMO ${station.wmo}`:station.icao].filter(Boolean).join(' · '))}</small></span><b>${round(station.distance)} км</b>`;button.onclick=()=>setStationLocation(station.latitude,station.longitude,station);list.append(button);
+  });
+  list.hidden=false;
+}
+
+function fitNearbyStations(){
+  if(!state.map||!state.nearbyStations.length)return;const lat=finite($('windLatitude').value),lon=finite($('windLongitude').value);if(lat==null||lon==null)return;
+  state.map.fitBounds([[lat,lon],...state.nearbyStations.slice(0,8).map(station=>[station.latitude,station.longitude])],{padding:[28,28],maxZoom:10});
+}
+
+function rp5StationCode(value){const match=String(value||'').match(/(?:WMO(?:_ID)?\s*=\s*)?(\d{5})/i);return match?.[1]||''}
+function matchRp5Station(){
+  const code=rp5StationCode(state.rp5?.stationId);if(!code||!state.stationCatalog)return false;
+  const station=state.stationCatalog.find(item=>item.wmo===code||item.id===code||String(item.usaf||'').startsWith(code));
+  if(!station)return false;setStationLocation(station.latitude,station.longitude,station);return true;
+}
+
+async function refreshNearbyStations(fitMap=false){
+  const button=$('windPickStationBtn');button.disabled=true;$('windNearbyStations').hidden=false;$('windNearbyStations').innerHTML='<p>Загружаю каталог метеостанций…</p>';
+  try{await loadWeatherStations();if(document.querySelector('[name="windSource"]:checked')?.value!=='rp5')return;if(state.selectedStation)setStationLocation(state.selectedStation.latitude,state.selectedStation.longitude,state.selectedStation);else renderNearbyStations();if(fitMap)fitNearbyStations()}
+  catch(error){console.error(error);if(document.querySelector('[name="windSource"]:checked')?.value==='rp5'){$('windNearbyStations').innerHTML='<p class="error">Не удалось загрузить каталог станций. Проверьте подключение к интернету.</p>';setMessage('Не удалось загрузить каталог метеостанций.','error')}}
+  finally{button.disabled=false}
+}
 
 async function searchPlace(){
   const query=$('windPlaceSearch').value.trim(),results=$('windPlaceResults');
@@ -114,6 +160,7 @@ function locateUser(){
 function sourceChanged(){
   const rp5=document.querySelector('[name="windSource"]:checked').value==='rp5';
   $('windRp5Controls').hidden=!rp5;$('windModelInfo').hidden=rp5;
+  if(rp5)refreshNearbyStations(true);else{state.stationLayers?.clearLayers();state.stationLine?.remove();state.stationLine=null;state.stationMarker?.remove();state.stationMarker=null;$('windNearbyStations').hidden=true}
 }
 
 function parseCsvLine(line,delimiter=';'){
@@ -155,7 +202,7 @@ async function readRp5(file){
 
 async function rp5Selected(file){
   if(!file)return;$('windRp5FileName').textContent='Читаю файл…';
-  try{state.rp5=await readRp5(file);$('windRp5FileName').textContent=`${state.rp5.station}${state.rp5.stationId?` · ${state.rp5.stationId}`:''}`;setMessage(`Загружены данные: ${state.rp5.rows.length} наблюдений.`,'success')}
+  try{state.rp5=await readRp5(file);$('windRp5FileName').textContent=`${state.rp5.station}${state.rp5.stationId?` · ${state.rp5.stationId}`:''}`;await loadWeatherStations();const rp5Active=document.querySelector('[name="windSource"]:checked')?.value==='rp5',matched=rp5Active&&matchRp5Station();if(rp5Active&&!matched)renderNearbyStations();setMessage(`Загружены данные: ${state.rp5.rows.length} наблюдений.${matched?' Станция найдена по номеру WMO.':' Выберите станцию на карте или в списке.'}`,'success')}
   catch(error){console.error(error);state.rp5=null;$('windRp5File').value='';$('windRp5FileName').textContent='Файл в кодировке UTF-8';setMessage(error.message==='rp5-columns'?'В CSV не найдены столбцы DD и Ff. На RP5 выберите формат CSV UTF-8.':'Не удалось прочитать данные из CSV RP5.','error')}
 }
 
@@ -163,9 +210,10 @@ function haversineKm(lat1,lon1,lat2,lon2){const rad=Math.PI/180,dLat=(lat2-lat1)
 function updateStationDistance(){
   const lat=finite($('windLatitude').value),lon=finite($('windLongitude').value),stationLat=finite($('windStationLatitude').value),stationLon=finite($('windStationLongitude').value),node=$('windStationDistance');
   node.className='wind-distance-note';
-  if([lat,lon,stationLat,stationLon].some(value=>value==null)){node.textContent='Укажите координаты станции, чтобы проверить расстояние до места поиска.';if(state.stationLine){state.stationLine.remove();state.stationLine=null}return null}
+  if(document.querySelector('[name="windSource"]:checked')?.value!=='rp5'){if(state.stationLine){state.stationLine.remove();state.stationLine=null}if(state.stationMarker){state.stationMarker.remove();state.stationMarker=null}return null}
+  if([lat,lon,stationLat,stationLon].some(value=>value==null)){node.textContent='Выберите реальную станцию на карте или в списке. До выбора соединительный пунктир не показывается.';if(state.stationLine){state.stationLine.remove();state.stationLine=null}if(state.stationMarker){state.stationMarker.remove();state.stationMarker=null}state.selectedStation=null;return null}
   const distance=haversineKm(lat,lon,stationLat,stationLon);node.textContent=`Метеостанция находится примерно в ${round(distance,1)} км от места поиска.`;
-  if(state.map){if(state.stationLine)state.stationLine.setLatLngs([[lat,lon],[stationLat,stationLon]]);else state.stationLine=L.polyline([[lat,lon],[stationLat,stationLon]],{color:'#317da0',weight:2,dashArray:'6 6',opacity:.8}).addTo(state.map);state.map.getContainer().classList.remove('picking-station')}
+  if(state.map){if(state.stationLine)state.stationLine.setLatLngs([[lat,lon],[stationLat,stationLon]]);else state.stationLine=L.polyline([[lat,lon],[stationLat,stationLon]],{color:'#317da0',weight:2,dashArray:'6 6',opacity:.8}).addTo(state.map)}
   if(distance>50){node.classList.add('warning');node.textContent+=distance>100?' Данные могут заметно отличаться от условий на местности.':' Учитывайте удаленность при работе с результатом.'}
   return distance;
 }
@@ -249,7 +297,7 @@ export function initWindRose(){
   setDefaultPeriod();initMap();
   $('windPlaceSearchBtn').onclick=searchPlace;$('windPlaceSearch').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();searchPlace()}});$('windLocateBtn').onclick=locateUser;
   ['windLatitude','windLongitude'].forEach(id=>$(id).addEventListener('change',()=>setLocation(finite($('windLatitude').value),finite($('windLongitude').value),'Точка по координатам')));
-  document.querySelectorAll('[name="windSource"]').forEach(input=>input.onchange=sourceChanged);$('windRp5File').onchange=event=>rp5Selected(event.target.files[0]);$('windPickStationBtn').onclick=pickStationOnMap;['windStationLatitude','windStationLongitude'].forEach(id=>$(id).addEventListener('change',()=>setStationLocation(finite($('windStationLatitude').value),finite($('windStationLongitude').value))));
+  document.querySelectorAll('[name="windSource"]').forEach(input=>input.onchange=sourceChanged);$('windRp5File').onchange=event=>rp5Selected(event.target.files[0]);$('windPickStationBtn').onclick=()=>refreshNearbyStations(true);
   document.querySelectorAll('[data-wind-hours]').forEach(button=>button.onclick=()=>setDefaultPeriod(Number(button.dataset.windHours)));$('windRoseForm').onsubmit=buildRose;$('windSaveImageBtn').onclick=saveImage;$('windSaveDataBtn').onclick=saveData;
   return{onShow(){initMap();setTimeout(()=>state.map?.invalidateSize(),0);if(state.summary)drawRose(state.summary,state.meta)},onTheme(){if(state.summary)drawRose(state.summary,state.meta)}};
 }
