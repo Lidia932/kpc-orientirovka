@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600&family=Roboto+Condensed:wght@400;500&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.webmanifest?v=51">
   <link rel="icon" href="icon.svg">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
   <script>
     try {
       document.documentElement.dataset.theme = localStorage.getItem('kpc-theme') === 'dark' ? 'dark' : 'light';
@@ -17,7 +18,7 @@
       document.documentElement.dataset.theme = 'light';
     }
   </script>
-  <link rel="stylesheet" href="styles.css?v=58">
+  <link rel="stylesheet" href="styles.css?v=59">
   <title>КПЦ Симбирск — ориентировка</title>
 </head>
 <body class="auth-loading">
@@ -108,6 +109,10 @@
           <svg class="menu-section-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15h6"/></svg>
           <span>Создание ориентировки</span>
         </button>
+        <button id="windRoseViewBtn" class="menu-section-link" type="button">
+          <svg class="menu-section-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/><path d="m14.8 9.2-1.6 4-4 1.6 1.6-4 4-1.6Z"/></svg>
+          <span>Роза ветров</span>
+        </button>
         <details class="menu-group" data-status="active" open>
           <summary><span class="menu-section-title"><svg class="menu-section-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span>Активный поиск</span></span></summary>
           <div class="menu-subgroup" data-type="ПСС">
@@ -173,6 +178,10 @@
       <button id="homeArchiveBtn" class="home-action home-action-wide" type="button" aria-expanded="false" aria-controls="homeArchiveSection">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
         <span><strong>Архив</strong><small>Открыть сохраненные поиски</small></span>
+      </button>
+      <button id="homeWindRoseBtn" class="home-action home-action-wide home-wind-action" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/><path d="m14.8 9.2-1.6 4-4 1.6 1.6-4 4-1.6Z"/></svg>
+        <span><strong>Роза ветров</strong><small>Определить преобладающий ветер и направление переноса запаха</small></span>
       </button>
     </div>
   </section>
@@ -242,6 +251,90 @@
       <button type="button" data-home-menu-status="archive" class="home-text-action">Открыть архив</button>
     </div>
     <div id="homeRecentCases" class="home-recent-list"></div>
+  </section>
+</main>
+
+<main id="windRoseView" class="wind-view" hidden>
+  <header class="wind-page-head">
+    <div>
+      <span class="wind-kicker">Инструмент кинолога</span>
+      <h2>Роза ветров</h2>
+      <p>Выберите место и период. Сервис покажет, откуда чаще всего дул ветер, его силу, порывы и направление переноса запаха.</p>
+    </div>
+  </header>
+
+  <section class="wind-workspace">
+    <form id="windRoseForm" class="wind-controls">
+      <div class="wind-step-head"><span>1</span><div><h3>Место</h3><p>Найдите место или отметьте его на карте.</p></div></div>
+      <div class="wind-location-search">
+        <label for="windPlaceSearch">Населенный пункт или адрес</label>
+        <div class="wind-search-row"><input id="windPlaceSearch" type="search" autocomplete="off" placeholder="Например, Ульяновск"><button id="windPlaceSearchBtn" class="ghost" type="button">Найти</button></div>
+        <div id="windPlaceResults" class="wind-place-results" hidden></div>
+      </div>
+      <div class="wind-coordinate-row">
+        <label>Широта<input id="windLatitude" type="number" min="-90" max="90" step="0.000001" required></label>
+        <label>Долгота<input id="windLongitude" type="number" min="-180" max="180" step="0.000001" required></label>
+        <button id="windLocateBtn" class="wind-icon-action" type="button" title="Определить мое местоположение" aria-label="Определить мое местоположение">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2"/></svg>
+        </button>
+      </div>
+      <div id="windMap" class="wind-map" aria-label="Карта выбранной местности"></div>
+      <p class="wind-map-hint">Нажмите на карту, чтобы точно указать место поиска. Буква «С» на компасе показывает реальный север карты.</p>
+
+      <div class="wind-step-head"><span>2</span><div><h3>Источник данных</h3><p>Автоматический расчет или наблюдения метеостанции.</p></div></div>
+      <div class="wind-source-switch" role="radiogroup" aria-label="Источник метеоданных">
+        <label><input type="radio" name="windSource" value="model" checked><span><strong>Расчетная точка</strong><small>Автоматически по координатам</small></span></label>
+        <label><input type="radio" name="windSource" value="rp5"><span><strong>Метеостанция RP5</strong><small>Фактический CSV-файл</small></span></label>
+      </div>
+      <div id="windModelInfo" class="wind-source-note">Используются почасовые данные Open-Meteo: архив наблюдений и моделей либо прогноз.</div>
+      <div id="windRp5Controls" class="wind-rp5-controls" hidden>
+        <label class="wind-file-button" for="windRp5File">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0-12-4 4m4-4 4 4"/><path d="M5 14v5h14v-5"/></svg>
+          <span><strong>Выбрать CSV с RP5</strong><small id="windRp5FileName">Файл в кодировке UTF-8</small></span>
+          <input id="windRp5File" type="file" accept=".csv,text/csv">
+        </label>
+        <div class="wind-station-location">
+          <label>Широта станции<input id="windStationLatitude" type="number" min="-90" max="90" step="0.000001" placeholder="Необязательно"></label>
+          <label>Долгота станции<input id="windStationLongitude" type="number" min="-180" max="180" step="0.000001" placeholder="Необязательно"></label>
+        </div>
+        <button id="windPickStationBtn" class="wind-pick-station" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z"/><circle cx="12" cy="10" r="2"/></svg>
+          <span>Указать станцию на карте</span>
+        </button>
+        <p id="windStationDistance" class="wind-distance-note">Укажите координаты станции, чтобы проверить расстояние до места поиска.</p>
+      </div>
+
+      <div class="wind-step-head"><span>3</span><div><h3>Период</h3><p>Можно выбрать день целиком или точное время до часа.</p></div></div>
+      <div class="wind-period-grid">
+        <label>Начало<input id="windStart" type="datetime-local" required></label>
+        <label>Окончание<input id="windEnd" type="datetime-local" required></label>
+      </div>
+      <div class="wind-presets" aria-label="Быстрый выбор периода">
+        <button type="button" data-wind-hours="6">6 часов</button>
+        <button type="button" data-wind-hours="12">12 часов</button>
+        <button type="button" data-wind-hours="24">24 часа</button>
+        <button type="button" data-wind-hours="72">3 дня</button>
+      </div>
+      <button id="windBuildBtn" class="primary wind-build" type="submit">Построить розу ветров</button>
+      <p id="windMessage" class="wind-message" aria-live="polite"></p>
+    </form>
+
+    <section id="windResult" class="wind-result" hidden>
+      <header class="wind-result-head"><div><span>Результат за выбранный период</span><h3 id="windResultPlace">Выбранная местность</h3></div><span id="windSourceBadge" class="wind-source-badge"></span></header>
+      <div class="wind-summary-grid">
+        <article><span>Преобладал</span><strong id="windDominantDirection">—</strong><small id="windDominantShare">—</small></article>
+        <article><span>Средняя сила</span><strong id="windDominantSpeed">—</strong><small>в преобладающем направлении</small></article>
+        <article><span>Макс. порыв</span><strong id="windMaxGust">—</strong><small>за выбранный период</small></article>
+        <article class="wind-scent-card"><span>Запах переносило</span><strong id="windScentDirection">—</strong><small>противоположно направлению ветра</small></article>
+      </div>
+      <div class="wind-chart-shell"><canvas id="windRoseCanvas" width="900" height="900" aria-label="Диаграмма розы ветров"></canvas></div>
+      <div class="wind-legend" aria-label="Скорость ветра">
+        <span><i class="speed-1"></i>&lt; 2 м/с</span><span><i class="speed-2"></i>2–4 м/с</span><span><i class="speed-3"></i>4–6 м/с</span><span><i class="speed-4"></i>6–8 м/с</span><span><i class="speed-5"></i>&gt; 8 м/с</span>
+      </div>
+      <p id="windResultNote" class="wind-result-note"></p>
+      <details class="wind-data-details"><summary>Источник и исходные данные</summary><div id="windDataMeta"></div></details>
+      <div class="wind-result-actions"><button id="windSaveImageBtn" class="secondary" type="button">Скачать картинку</button><button id="windSaveDataBtn" class="ghost" type="button">Скачать исходные данные</button></div>
+    </section>
   </section>
 </main>
 
@@ -543,6 +636,7 @@
 </dialog>
 
 <script src="vendor/jspdf.umd.min.js"></script>
-<script type="module" src="app-v5.js?v=58"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script type="module" src="app-v5.js?v=59"></script>
 </body>
 </html>
