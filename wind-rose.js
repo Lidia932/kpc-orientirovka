@@ -13,7 +13,7 @@ const RP5_DIRECTIONS=new Map([
 const $=id=>document.getElementById(id);
 const STATION_RADIUS_KM=300;
 const MAX_NEARBY_STATIONS=20;
-const state={map:null,marker:null,stationMarker:null,stationLine:null,stationLayers:null,windLayers:null,place:'Выбранная точка',rows:[],meta:null,summary:null,rp5:null,stationCatalog:null,stationsPromise:null,nearbyStations:[],selectedStation:null,compassShell:null,compassHeading:null,compassActive:false,compassAbsoluteSeen:false,placeSearchTimer:null,placeSearchController:null,placeSearchSequence:0};
+const state={map:null,marker:null,stationMarker:null,stationLine:null,stationLayers:null,windLayers:null,place:'Выбранная точка',rows:[],meta:null,summary:null,rp5:null,stationCatalog:null,stationsPromise:null,nearbyStations:[],selectedStation:null,compassShell:null,compassHeading:null,compassActive:false,compassAbsoluteSeen:false,placeSearchTimer:null,placeSearchController:null,placeSearchSequence:0,terrainProfile:null,terrainKey:''};
 
 function pad(value){return String(value).padStart(2,'0')}
 function localInputValue(date){return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`}
@@ -104,7 +104,8 @@ function initMap(){
 
 function setLocation(latitude,longitude,label=state.place,zoom=true){
   if(!Number.isFinite(Number(latitude))||!Number.isFinite(Number(longitude)))return;
-  const lat=Number(latitude),lon=Number(longitude);
+  const lat=Number(latitude),lon=Number(longitude),previousLat=finite($('windLatitude').value),previousLon=finite($('windLongitude').value);
+  if(previousLat!==lat||previousLon!==lon){state.terrainProfile=null;state.terrainKey='';if(state.meta)delete state.meta.terrain}
   $('windLatitude').value=lat.toFixed(6);$('windLongitude').value=lon.toFixed(6);state.place=label||'Выбранная точка';
   if(state.map){
     if(!state.marker)state.marker=L.marker([lat,lon],{draggable:true}).addTo(state.map).on('dragend',event=>{const point=event.target.getLatLng();setLocation(point.lat,point.lng,'Точка на карте',false)});
@@ -128,7 +129,7 @@ function setStationLocation(latitude,longitude,station=null){
 function stationFromRow(row){return{id:row[0],name:row[1],country:row[2],latitude:row[3],longitude:row[4],wmo:row[5],icao:row[6],usaf:row[7]}}
 async function loadWeatherStations(){
   if(state.stationCatalog)return state.stationCatalog;
-  if(!state.stationsPromise)state.stationsPromise=fetch('./data/weather-stations.json?v=61').then(response=>{if(!response.ok)throw new Error('station-catalog');return response.json()}).then(data=>{state.stationCatalog=data.stations.map(stationFromRow);return state.stationCatalog}).catch(error=>{state.stationsPromise=null;throw error});
+  if(!state.stationsPromise)state.stationsPromise=fetch('./data/weather-stations.json?v=62').then(response=>{if(!response.ok)throw new Error('station-catalog');return response.json()}).then(data=>{state.stationCatalog=data.stations.map(stationFromRow);return state.stationCatalog}).catch(error=>{state.stationsPromise=null;throw error});
   return state.stationsPromise;
 }
 
@@ -285,11 +286,42 @@ function analyzeRows(rows){
   return{bins,total:usable.length,ignored:rows.length-usable.length,dominant,dominantDegrees:dominant*22.5,dominantAverage:bins[dominant].speedSum/bins[dominant].count,maxGust:Math.max(...usable.map(row=>row.gust||0)),meanDirection,consistency};
 }
 
+function average(values){return values.length?values.reduce((sum,value)=>sum+value,0)/values.length:null}
+function weatherStats(rows){
+  const temperatures=rows.map(row=>finite(row.temp)).filter(value=>value!=null),humidities=rows.map(row=>finite(row.rh)).filter(value=>value!=null),precipitation=rows.map(row=>finite(row.precip)).filter(value=>value!=null);
+  return{temperatureAverage:average(temperatures),temperatureMin:temperatures.length?Math.min(...temperatures):null,temperatureMax:temperatures.length?Math.max(...temperatures):null,humidityAverage:average(humidities),humidityMin:humidities.length?Math.min(...humidities):null,humidityMax:humidities.length?Math.max(...humidities):null,precipitationTotal:precipitation.length?precipitation.reduce((sum,value)=>sum+value,0):null,wetHours:precipitation.filter(value=>value>0).length};
+}
+
+async function fetchTerrainProfile(latitude,longitude,bearing){
+  const point=(name,distance,direction,role)=>{const coordinates=distance?destination(latitude,longitude,direction,distance):[latitude,longitude];return{name,distance,role,latitude:coordinates[0],longitude:coordinates[1]}};
+  const points=[point('Точка поиска',0,bearing,'center'),point('1 км по шлейфу',1,bearing,'downwind'),point('3 км по шлейфу',3,bearing,'downwind'),point('6 км по шлейфу',6,bearing,'downwind'),point('2 км против ветра',2,(bearing+180)%360,'upwind'),point('3 км слева от шлейфа',3,(bearing+270)%360,'crosswind'),point('3 км справа от шлейфа',3,(bearing+90)%360,'crosswind')];
+  const params=new URLSearchParams({latitude:points.map(item=>item.latitude.toFixed(6)).join(','),longitude:points.map(item=>item.longitude.toFixed(6)).join(',')});
+  const response=await fetch(`https://api.open-meteo.com/v1/elevation?${params}`);if(!response.ok)throw new Error(`terrain-${response.status}`);const data=await response.json(),elevations=data.elevation||[];
+  const samples=points.map((item,index)=>({...item,elevation:finite(elevations[index])})).filter(item=>item.elevation!=null);if(samples.length!==points.length)throw new Error('terrain-incomplete');
+  const center=samples[0].elevation,downwind=samples.filter(item=>item.role==='downwind'),allElevations=samples.map(item=>item.elevation),crosswind=samples.filter(item=>item.role==='crosswind');
+  return{samples,center,end:downwind.at(-1).elevation,rise:Math.max(0,...downwind.map(item=>item.elevation-center)),drop:Math.min(0,...downwind.map(item=>item.elevation-center)),range:Math.max(...allElevations)-Math.min(...allElevations),crossDifference:Math.abs(crosswind[0].elevation-crosswind[1].elevation),bearing};
+}
+
+async function ensureTerrainProfile(summary){
+  const latitude=finite($('windLatitude').value),longitude=finite($('windLongitude').value),bearing=scentDegrees(summary.dominantDegrees);if(latitude==null||longitude==null)return null;const key=`${latitude.toFixed(5)}:${longitude.toFixed(5)}:${Math.round(bearing)}`;
+  if(state.terrainKey===key&&state.terrainProfile)return state.terrainProfile;
+  try{state.terrainProfile=await fetchTerrainProfile(latitude,longitude,bearing);state.terrainKey=key;return state.terrainProfile}catch(error){console.warn('Terrain profile unavailable',error);state.terrainProfile=null;state.terrainKey='';return null}
+}
+
+function describeTerrain(terrain){
+  if(!terrain)return'Профиль высот не загрузился, поэтому влияние рельефа в эту оценку не включено.';
+  const change=terrain.end-terrain.center,changeText=`за 6 км высота меняется с ${Math.round(terrain.center)} до ${Math.round(terrain.end)} м (${change>=0?'+':''}${Math.round(change)} м)`;
+  if(terrain.range<=25&&Math.abs(change)<=20)return`Коридор относительно ровный: ${changeText}. Выраженного рельефного препятствия по цифровой модели не видно.`;
+  if(terrain.rise>=45&&change>20)return`Шлейф направлен на заметный подъем: ${changeText}, максимальный подъем по профилю +${Math.round(terrain.rise)} м. Склон способен поднимать и деформировать поток, а за перегибом возможны завихрения.`;
+  if(terrain.drop<=-45&&change<-20)return`Шлейф направлен вниз по рельефу: ${changeText}, максимальное снижение ${Math.round(terrain.drop)} м. Местный склоновый поток может усиливать перенос вниз, но ночью способен отличаться от ветра на высоте 10 м.`;
+  return`Рельеф неоднородный: ${changeText}, общий перепад в выборке ${Math.round(terrain.range)} м, поперечная разница ${Math.round(terrain.crossDifference)} м. Вероятны локальные отклонения и дробление шлейфа.`;
+}
+
 function currentTaskMode(){return document.querySelector('[name="windTask"]:checked')?.value==='ptp'?'ptp':'pss'}
 function stabilityLabel(value){if(value>=.75)return{label:'высокая',text:'направления хорошо складываются в один основной шлейф'};if(value>=.5)return{label:'средняя',text:'основной сектор заметен, но ветер частично менялся'};if(value>=.25)return{label:'низкая',text:'ветер был переменным, одной средней стрелки недостаточно'};return{label:'очень низкая',text:'направления заметно компенсировали друг друга'}}
 function scentConditionLabel(score){if(score>=70)return'хорошие';if(score>=40)return'средние';if(score>=16)return'низкие';return'очень низкие'}
 function assessScentConditions(rows,mode=currentTaskMode()){
-  const usable=rows.filter(row=>row.speed!=null),scores=[],weatherRows=usable.filter(row=>row.temp!=null||row.rh!=null||row.precip!=null).length;
+  const usable=rows.filter(row=>row.speed!=null),scores=[],weatherRows=usable.filter(row=>row.temp!=null||row.rh!=null||row.precip!=null).length,weather=weatherStats(usable);
   usable.forEach(row=>{
     const speed=Number(row.speed||0),gust=Number(row.gust||0),temp=finite(row.temp),rh=finite(row.rh),precip=finite(row.precip);let score=62;
     if(speed<.5)score-=20;else if(speed<=4)score+=10;else if(speed<=8)score-=8;else score-=24;
@@ -300,12 +332,28 @@ function assessScentConditions(rows,mode=currentTaskMode()){
     scores.push(clamp(score,0,100));
   });
   const score=scores.length?scores.reduce((sum,value)=>sum+value,0)/scores.length:0,coverage=usable.length?weatherRows/usable.length:0,limited=coverage<.5;
-  return{mode,score:Math.round(score),label:scentConditionLabel(score),coverage,limited,modeLabel:mode==='ptp'?'ПТП':'ПСС',modeDescription:mode==='ptp'?'для поиска погибшего: мороз и снег сильнее ограничивают выход запаха':'для поиска живого человека на поверхности: учитывается тепловой поток тела'};
+  return{mode,score:Math.round(score),label:scentConditionLabel(score),coverage,limited,weather,modeLabel:mode==='ptp'?'ПТП':'ПСС',modeDescription:mode==='ptp'?'для поиска погибшего: мороз и снег сильнее ограничивают выход запаха':'для поиска живого человека на поверхности: учитывается тепловой поток тела'};
+}
+
+function describePtpPlume(summary,assessment,terrain){
+  const weather=assessment.weather,gustFactor=summary.dominantAverage?summary.maxGust/summary.dominantAverage:0;let shape,shapeText;
+  if(summary.consistency>=.72&&gustFactor<1.8){shape='Относительно направленный шлейф';shapeText=`ветер большую часть периода сохранял общий сектор, поэтому основной коридор вероятнее вытягивался ${directionTo(scentDegrees(summary.dominantDegrees))}.`}
+  else if(summary.consistency>=.42){shape='Переменный шлейф';shapeText=`основной перенос шел ${directionTo(scentDegrees(summary.dominantDegrees))}, но смена направлений и порывы могли периодически смещать его в соседние секторы.`}
+  else{shape='Широкий и разорванный шлейф';shapeText='направления заметно менялись, поэтому ориентироваться только на среднюю стрелку нельзя: следовало проверять несколько соседних секторов.'}
+  const weatherParts=[];
+  if(weather.humidityAverage!=null)weatherParts.push(`влажность в среднем ${Math.round(weather.humidityAverage)}% (${Math.round(weather.humidityMin)}–${Math.round(weather.humidityMax)}%)`);
+  if(weather.temperatureAverage!=null)weatherParts.push(`температура ${round(weather.temperatureAverage)} °C (${round(weather.temperatureMin)}…${round(weather.temperatureMax)} °C)`);
+  if(weather.precipitationTotal!=null)weatherParts.push(`осадки ${round(weather.precipitationTotal)} мм за ${weather.wetHours} ч`);
+  let moisture='Данных о влажности и осадках недостаточно для отдельного вывода.';
+  if(weather.humidityAverage!=null){if(weather.humidityAverage>=70)moisture='Высокая влажность могла дольше удерживать запах у влажной поверхности, но туман и насыщенный воздух способны делать его менее направленным.';else if(weather.humidityAverage<40)moisture='Сухой воздух и поверхность могли ускорять рассеивание и ослаблять устойчивость запахового следа.';else moisture='Умеренная влажность сама по себе не выглядит главным ограничивающим фактором.'}
+  if(weather.precipitationTotal>0)moisture+=weather.temperatureAverage!=null&&weather.temperatureAverage<=1?' Снег или холодные осадки могли дополнительно закрывать источник запаха.':' Осадки могли прибивать часть запаха к поверхности и одновременно ослаблять воздушный шлейф.';
+  return{shape,shapeText,weatherText:weatherParts.length?weatherParts.join('; '):'температура, влажность и осадки в источнике не представлены',moisture,terrainText:describeTerrain(terrain)};
 }
 
 function renderBriefSummary(summary,meta,assessment){
   const share=Math.round(summary.bins[summary.dominant].count/summary.total*100),stability=stabilityLabel(summary.consistency),distance=meta.distance;
-  $('windBriefSummary').innerHTML=`<ul><li><strong>${escapeHtml(windName(summary.dominantDegrees))}</strong> преобладал ${share}% учтенного времени: воздух двигался ${escapeHtml(directionFrom(summary.dominantDegrees))} ${escapeHtml(directionTo(scentDegrees(summary.dominantDegrees)))}.</li><li>Средняя скорость в основном секторе — <strong>${round(summary.dominantAverage)} м/с</strong>, максимальный порыв — <strong>${round(summary.maxGust)} м/с</strong>.</li><li>Вероятный основной перенос запаха — <strong>${escapeHtml(directionTo(scentDegrees(summary.dominantDegrees)))}.</strong></li><li>Устойчивость направления — <strong>${stability.label}</strong>: ${stability.text}.</li><li>Оценка условий ${assessment.modeLabel} — <strong>${assessment.label}, ${assessment.score}/100</strong>: ${assessment.modeDescription}.${assessment.limited?' Температура, влажность или осадки доступны не для большинства строк, поэтому оценка ограничена данными ветра.':''}</li>${distance>50?`<li>Метеостанция удалена примерно на <strong>${round(distance)} км</strong>; местный ветер может отличаться.</li>`:''}</ul><p>Это ориентировочная рабочая сводка. На месте проверьте ветер у земли, рельеф, лес, застройку и показания собаки.</p>`;
+  const ptp=assessment.mode==='ptp'?describePtpPlume(summary,assessment,meta.terrain):null;
+  $('windBriefSummary').innerHTML=`<ul><li><strong>${escapeHtml(windName(summary.dominantDegrees))}</strong> преобладал ${share}% учтенного времени: воздух двигался ${escapeHtml(directionFrom(summary.dominantDegrees))} ${escapeHtml(directionTo(scentDegrees(summary.dominantDegrees)))}.</li><li>Средняя скорость в основном секторе — <strong>${round(summary.dominantAverage)} м/с</strong>, максимальный порыв — <strong>${round(summary.maxGust)} м/с</strong>.</li><li>Вероятный основной перенос запаха — <strong>${escapeHtml(directionTo(scentDegrees(summary.dominantDegrees)))}.</strong></li><li>Устойчивость направления — <strong>${stability.label}</strong>: ${stability.text}.</li><li>Оценка условий ${assessment.modeLabel} — <strong>${assessment.label}, ${assessment.score}/100</strong>: ${assessment.modeDescription}.${assessment.limited?' Температура, влажность или осадки доступны не для большинства строк, поэтому оценка ограничена данными ветра.':''}</li>${distance>50?`<li>Метеостанция удалена примерно на <strong>${round(distance)} км</strong>; местный ветер может отличаться.</li>`:''}</ul>${ptp?`<section class="wind-ptp-analysis"><h4>Как предположительно распространялся запах для ПТП</h4><p><strong>${escapeHtml(ptp.shape)}.</strong> ${escapeHtml(capitalize(ptp.shapeText))}</p><ul><li><strong>Погода:</strong> ${escapeHtml(ptp.weatherText)}.</li><li><strong>Влажность и осадки:</strong> ${escapeHtml(ptp.moisture)}</li><li><strong>Рельеф:</strong> ${escapeHtml(ptp.terrainText)}</li></ul><p class="wind-analysis-warning">Расчет использует погоду на высоте 10 м и цифровой рельеф 90 м. Лес, здания, овраги меньшего масштаба, состояние тела и реальный ветер у земли модель не видит.</p></section>`:''}<p>Это ориентировочная рабочая сводка. На месте проверьте ветер у земли, рельеф, лес, застройку и показания собаки.</p>`;
 }
 
 function polarPoint(cx,cy,radius,degrees){const radians=(degrees-90)*Math.PI/180;return[cx+Math.cos(radians)*radius,cy+Math.sin(radians)*radius]}
@@ -324,10 +372,11 @@ function drawRose(summary,meta){
 }
 
 function destination(latitude,longitude,bearing,distanceKm=8){const radius=6371,br=bearing*Math.PI/180,lat1=latitude*Math.PI/180,lon1=longitude*Math.PI/180,lat2=Math.asin(Math.sin(lat1)*Math.cos(distanceKm/radius)+Math.cos(lat1)*Math.sin(distanceKm/radius)*Math.cos(br)),lon2=lon1+Math.atan2(Math.sin(br)*Math.sin(distanceKm/radius)*Math.cos(lat1),Math.cos(distanceKm/radius)-Math.sin(lat1)*Math.sin(lat2));return[lat2*180/Math.PI,lon2*180/Math.PI]}
-function drawMapDirections(summary){
+function drawMapDirections(summary,meta){
   if(!state.map)return;state.windLayers.clearLayers();const lat=finite($('windLatitude').value),lon=finite($('windLongitude').value),from=destination(lat,lon,summary.dominantDegrees,6),to=destination(lat,lon,scentDegrees(summary.dominantDegrees),6);
   L.polyline([from,[lat,lon]],{color:'#c83d3d',weight:5,opacity:.85}).addTo(state.windLayers);L.circleMarker(from,{radius:7,color:'#c83d3d',fillOpacity:1}).bindTooltip(`Ветер приходил ${directionFrom(summary.dominantDegrees)}`,{permanent:false}).addTo(state.windLayers);
   L.polyline([[lat,lon],to],{color:'#2f7d66',weight:5,dashArray:'9 7',opacity:.9}).addTo(state.windLayers);L.circleMarker(to,{radius:7,color:'#2f7d66',fillOpacity:1}).bindTooltip(`Запах переносило ${directionTo(scentDegrees(summary.dominantDegrees))}`,{permanent:false}).addTo(state.windLayers);
+  if(currentTaskMode()==='ptp'&&meta?.terrain){const center=meta.terrain.center;meta.terrain.samples.filter(item=>item.role==='downwind').forEach(item=>{const delta=Math.round(item.elevation-center);L.circleMarker([item.latitude,item.longitude],{radius:4,color:'#fff',weight:2,fillColor:'#286f63',fillOpacity:1}).bindTooltip(`${item.name}: ${Math.round(item.elevation)} м (${delta>=0?'+':''}${delta} м от точки поиска)`).addTo(state.windLayers)})}
   state.map.fitBounds(L.latLngBounds([from,to]).pad(.45));
 }
 
@@ -338,8 +387,8 @@ function renderResult(summary,meta,{scroll=true}={}){
   $('windDominantSpeed').textContent=`${round(summary.dominantAverage)} м/с`;$('windMaxGust').textContent=summary.maxGust?`${round(summary.maxGust)} м/с`:'Нет данных';$('windScentDirection').textContent=capitalize(directionTo(scentDegrees(summary.dominantDegrees)));
   $('windTaskResultLabel').textContent=`Условия ${assessment.modeLabel}`;$('windScentCondition').textContent=`${capitalize(assessment.label)} · ${assessment.score}/100`;$('windScentConditionNote').textContent=assessment.limited?'оценка ограничена доступными полями':'для запахового шлейфа';
   const distance=meta.distance;$('windResultNote').textContent=`${windName(summary.dominantDegrees)} приходил ${directionFrom(summary.dominantDegrees)}, поэтому основной перенос запаха показан ${directionTo(scentDegrees(summary.dominantDegrees))}.${distance>50?` Метеостанция удалена на ${round(distance)} км — учитывайте возможные местные отличия.`:''}`;
-  renderBriefSummary(summary,meta,assessment);$('windDataMeta').innerHTML=`<p><strong>Источник:</strong> ${escapeHtml(meta.source)}</p><p><strong>Место:</strong> ${escapeHtml(meta.place)}</p><p><strong>Тип поиска:</strong> ${assessment.modeLabel}</p>${meta.station?`<p><strong>Метеостанция:</strong> ${escapeHtml(meta.station)}</p>`:''}<p><strong>Период:</strong> ${escapeHtml(formatPeriod(meta.start))} — ${escapeHtml(formatPeriod(meta.end))}</p><p><strong>Строк данных:</strong> ${state.rows.length}; учтено ${summary.total}; штиль или неполные строки: ${summary.ignored}.</p><p>Исходные почасовые значения сохраняются в памяти страницы до следующего построения и доступны для скачивания.</p>`;
-  drawRose(summary,meta);drawMapDirections(summary);updateCompassVisual();if(scroll)$('windResult').scrollIntoView({behavior:'smooth',block:'start'});
+  renderBriefSummary(summary,meta,assessment);$('windDataMeta').innerHTML=`<p><strong>Источник:</strong> ${escapeHtml(meta.source)}</p><p><strong>Место:</strong> ${escapeHtml(meta.place)}</p><p><strong>Тип поиска:</strong> ${assessment.modeLabel}</p>${meta.station?`<p><strong>Метеостанция:</strong> ${escapeHtml(meta.station)}</p>`:''}<p><strong>Период:</strong> ${escapeHtml(formatPeriod(meta.start))} — ${escapeHtml(formatPeriod(meta.end))}</p><p><strong>Строк данных:</strong> ${state.rows.length}; учтено ${summary.total}; штиль или неполные строки: ${summary.ignored}.</p>${meta.terrain&&assessment.mode==='ptp'?'<p><strong>Рельеф:</strong> Copernicus DEM GLO-90 через Open-Meteo Elevation API; высоты рассчитаны в точке поиска и вдоль шлейфа.</p>':''}<p>Исходные почасовые значения сохраняются в памяти страницы до следующего построения и доступны для скачивания.</p>`;
+  drawRose(summary,meta);drawMapDirections(summary,meta);updateCompassVisual();if(scroll)$('windResult').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 async function buildRose(event){
@@ -353,7 +402,7 @@ async function buildRose(event){
     if(source==='rp5'){
       if(!state.rp5)throw new Error('rp5-required');rows=state.rp5.rows.filter(row=>!row.time||(row.time>=start&&row.time<=end));if(!rows.length)throw new Error('rp5-period');const distance=updateStationDistance();meta={source:'Фактические данные RP5',place:state.place,station:`${state.rp5.station}${state.rp5.stationId?` · ${state.rp5.stationId}`:''}`,distance,start,end};
     }else{const result=await fetchModelRows(start,end,latitude,longitude);rows=result.rows;meta={source:result.source,place:state.place,start,end,distance:null}}
-    if(!rows.length)throw new Error('period-empty');state.rows=rows;const summary=analyzeRows(rows);renderResult(summary,meta);setMessage('Роза ветров построена.','success');
+    if(!rows.length)throw new Error('period-empty');state.rows=rows;const summary=analyzeRows(rows);if(currentTaskMode()==='ptp'){setMessage('Анализирую рельеф по направлению запаха…');meta.terrain=await ensureTerrainProfile(summary)}renderResult(summary,meta);setMessage(meta.terrain?'Роза ветров и профиль рельефа построены.':'Роза ветров построена.','success');
   }catch(error){console.error(error);const messages={'rp5-required':'Сначала выберите CSV-файл с RP5.','rp5-period':'В файле RP5 нет наблюдений за выбранные часы. Проверьте период.','period-empty':'Источник не вернул данных за выбранный период.','no-wind-data':'За выбранный период нет ветра сильнее 0,5 м/с или отсутствуют направления.'};setMessage(messages[error.message]||'Не удалось получить метеоданные. Проверьте интернет, период и выбранный источник.','error')}
   finally{button.disabled=false}
 }
@@ -369,7 +418,7 @@ export function initWindRose(){
   $('windPlaceSearchBtn').onclick=searchPlace;$('windPlaceSearch').addEventListener('input',schedulePlaceSuggestions);$('windPlaceSearch').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();searchPlace()}});$('windLocateBtn').onclick=locateUser;
   ['windLatitude','windLongitude'].forEach(id=>$(id).addEventListener('change',()=>setLocation(finite($('windLatitude').value),finite($('windLongitude').value),'Точка по координатам')));
   document.querySelectorAll('[name="windSource"]').forEach(input=>input.onchange=sourceChanged);$('windRp5File').onchange=event=>rp5Selected(event.target.files[0]);$('windPickStationBtn').onclick=()=>refreshNearbyStations(true);
-  document.querySelectorAll('[name="windTask"]').forEach(input=>input.onchange=()=>{if(state.summary&&state.meta)renderResult(state.summary,state.meta,{scroll:false})});
+  document.querySelectorAll('[name="windTask"]').forEach(input=>input.onchange=async()=>{if(!state.summary||!state.meta)return;if(currentTaskMode()==='ptp'&&!state.meta.terrain){setMessage('Добавляю профиль рельефа для ПТП…');state.meta.terrain=await ensureTerrainProfile(state.summary)}renderResult(state.summary,state.meta,{scroll:false});setMessage(state.meta.terrain&&currentTaskMode()==='ptp'?'Профиль рельефа добавлен.':'Тип поиска изменен.','success')});
   document.querySelectorAll('[data-wind-hours]').forEach(button=>button.onclick=()=>setDefaultPeriod(Number(button.dataset.windHours)));$('windRoseForm').onsubmit=buildRose;$('windSaveImageBtn').onclick=saveImage;$('windSaveDataBtn').onclick=saveData;
   return{onShow(){initMap();setTimeout(()=>state.map?.invalidateSize(),0);if(state.summary)drawRose(state.summary,state.meta)},onTheme(){if(state.summary)drawRose(state.summary,state.meta)}};
 }

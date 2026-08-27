@@ -9,7 +9,7 @@ import {
   onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where
 } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
 import {firebaseConfig} from './firebase-config.js';
-import {initWindRose} from './wind-rose.js?v=61';
+import {initWindRose} from './wind-rose.js?v=62';
 
 const OWNER_EMAIL='lidiya.lynx@gmail.com';
 const ARCHIVE_UPLOAD_URL='https://script.google.com/macros/s/AKfycbyF6IIZKnySKLSn6L7Fnf-lmd7vQ8Z5z8IFSRg8TixVVLK6-SpxSRsoyKrvrlxKXGBcZw/exec';
