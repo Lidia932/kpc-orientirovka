@@ -435,9 +435,9 @@
 @media(max-width:520px){.archive-result-actions{grid-template-columns:1fr}.archive-result-choice{min-height:66px}}
 
 /* Desktop workspace navigation. Mobile and compact tablet widths keep the top menu. */
-@media(min-width:1000px){
-  body.auth-ready{padding-left:278px}
-  .app-header{position:fixed;inset:0 auto 0 0;z-index:2200;display:flex;width:278px;height:100dvh;padding:20px 15px 16px;align-items:stretch;justify-content:flex-start;flex-direction:column;gap:14px;background:#f1eeeb;border:0;border-right:1px solid #ddd7d2;box-shadow:none}
+@media(min-width:1100px){
+  body.auth-ready{padding-left:340px}
+  .app-header{position:fixed;inset:0 auto 0 0;z-index:2200;display:flex;width:340px;height:100dvh;padding:22px 18px 18px;align-items:stretch;justify-content:flex-start;flex-direction:column;gap:15px;background:#f1eeeb;border:0;border-right:1px solid #d8d1cb;box-shadow:8px 0 26px #382d2410}
   .brand-area{display:grid;gap:13px;padding:0 7px 16px;border-bottom:1px solid #dcd5cf}
   .brand-block h1{color:#292725;font-size:22px}.brand-block p{color:#79736e;font-size:11px}
   .manage-users-button{width:100%;padding:9px 11px;text-align:left;background:transparent;color:#6e6863;border:1px solid transparent}
@@ -458,12 +458,12 @@
   .home-view,.layout,.case-view,.wind-view{width:100%}
 }
 
-@media(min-width:1000px) and (max-width:1240px){
+@media(min-width:1100px) and (max-width:1340px){
   .home-quick-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
   .home-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 
-@media(min-width:1000px){
+@media(min-width:1100px){
   :root[data-theme="dark"] .app-header{background:#1d2022;border-color:#353a3e}
   :root[data-theme="dark"] .brand-area{border-color:#353a3e}
   :root[data-theme="dark"] .brand-block h1{color:#f0f2f3}
@@ -480,3 +480,28 @@
   :root[data-theme="dark"] .case-link:hover{background:#343a3e;color:#f1f3f4}
   :root[data-theme="dark"] .case-link.current{background:#3a3335;color:#f5e8e9;box-shadow:inset 3px 0 #d84a52}
 }
+
+/* Photo navigation cards shared by the desktop sidebar and compact menu. */
+#homeViewBtn{--menu-photo:url("assets/home/hero-day.webp")}
+#createViewBtn{--menu-photo:url("assets/home/hero-night.webp")}
+#windRoseViewBtn{--menu-photo:url("assets/home/tile-wind.webp")}
+.menu-group[data-status="active"]>summary{--menu-photo:url("assets/home/tile-active.webp")}
+.menu-group[data-status="info"]>summary{--menu-photo:url("assets/home/tile-info.webp")}
+.menu-group[data-status="archive"]>summary{--menu-photo:url("assets/home/tile-archive.webp")}
+#homeViewBtn,#createViewBtn,#windRoseViewBtn,.menu-group[data-status]>summary{position:relative;min-height:62px;margin:6px 0;padding:12px 13px;overflow:hidden;background-color:#f8f5f2;background-image:linear-gradient(90deg,#f8f5f2 0%,#f8f5f2 46%,rgba(248,245,242,.88) 61%,rgba(248,245,242,.20) 100%),var(--menu-photo);background-position:center,right center;background-size:cover,auto 100%;background-repeat:no-repeat;color:#332f2c;border:1px solid #dcd5cf;border-radius:8px;box-shadow:0 2px 7px #382d240d}
+#homeViewBtn:hover,#createViewBtn:hover,#windRoseViewBtn:hover,.menu-group[data-status]>summary:hover{background-color:#f2ece7;background-image:linear-gradient(90deg,#f2ece7 0%,#f2ece7 46%,rgba(242,236,231,.84) 61%,rgba(242,236,231,.12) 100%),var(--menu-photo);color:#292521;border-color:#cfc4bb}
+#homeViewBtn.current,#createViewBtn.current,#windRoseViewBtn.current,.menu-group[data-status].current>summary{background-color:#fff;background-image:linear-gradient(90deg,#fff 0%,#fff 46%,rgba(255,255,255,.86) 61%,rgba(255,255,255,.12) 100%),var(--menu-photo);color:#2f2926;border-color:#d1c7c0;box-shadow:inset 3px 0 #b9212a,0 3px 9px #382d2416}
+#homeViewBtn>.menu-section-icon,#createViewBtn>.menu-section-icon,#windRoseViewBtn>.menu-section-icon,.menu-group[data-status]>summary .menu-section-icon{width:34px;height:34px;flex:0 0 34px;padding:7px;background:#ffffffd9;border:1px solid #ffffffb8;border-radius:8px;stroke:#527483;box-shadow:0 1px 5px #352d2414}
+.menu-group[data-status]>summary .menu-section-title{gap:10px}
+
+:root[data-theme="dark"] #homeViewBtn{--menu-photo:url("assets/home/hero-night.webp")}
+:root[data-theme="dark"] #createViewBtn{--menu-photo:url("assets/home/hero-day.webp")}
+:root[data-theme="dark"] #homeViewBtn,:root[data-theme="dark"] #createViewBtn,:root[data-theme="dark"] #windRoseViewBtn,:root[data-theme="dark"] .menu-group[data-status]>summary{background-color:#272b2d;background-image:linear-gradient(90deg,#272b2d 0%,#272b2d 44%,rgba(39,43,45,.86) 59%,rgba(39,43,45,.16) 100%),var(--menu-photo);color:#edf0f2;border-color:#41484c;box-shadow:0 2px 8px #0003}
+:root[data-theme="dark"] #homeViewBtn:hover,:root[data-theme="dark"] #createViewBtn:hover,:root[data-theme="dark"] #windRoseViewBtn:hover,:root[data-theme="dark"] .menu-group[data-status]>summary:hover{background-color:#303538;background-image:linear-gradient(90deg,#303538 0%,#303538 44%,rgba(48,53,56,.82) 59%,rgba(48,53,56,.10) 100%),var(--menu-photo);color:#fff;border-color:#596268}
+:root[data-theme="dark"] #homeViewBtn.current,:root[data-theme="dark"] #createViewBtn.current,:root[data-theme="dark"] #windRoseViewBtn.current,:root[data-theme="dark"] .menu-group[data-status].current>summary{background-color:#34393c;background-image:linear-gradient(90deg,#34393c 0%,#34393c 44%,rgba(52,57,60,.82) 59%,rgba(52,57,60,.08) 100%),var(--menu-photo);color:#fff;border-color:#5b6267;box-shadow:inset 3px 0 #e05259,0 3px 10px #0004}
+:root[data-theme="dark"] #homeViewBtn>.menu-section-icon,:root[data-theme="dark"] #createViewBtn>.menu-section-icon,:root[data-theme="dark"] #windRoseViewBtn>.menu-section-icon,:root[data-theme="dark"] .menu-group[data-status]>summary .menu-section-icon{background:#273136e6;border-color:#60707980;stroke:#b8d5e0}
+
+/* Keep the tile photographs as readable in the night theme as in the day theme. */
+:root[data-theme="dark"] .home-action{background-image:linear-gradient(90deg,#24272a 0%,#24272a 44%,rgba(36,39,42,.74) 57%,rgba(36,39,42,.10) 72%,transparent 100%),var(--home-tile)}
+:root[data-theme="dark"] .home-action:hover{background-image:linear-gradient(90deg,#30363a 0%,#30363a 44%,rgba(48,54,58,.72) 57%,rgba(48,54,58,.08) 72%,transparent 100%),var(--home-tile)}
+:root[data-theme="dark"] .home-action.expanded{background-image:linear-gradient(90deg,#344149 0%,#344149 44%,rgba(52,65,73,.72) 57%,rgba(52,65,73,.08) 72%,transparent 100%),var(--home-tile)}
