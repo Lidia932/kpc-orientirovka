@@ -18,7 +18,7 @@
       document.documentElement.dataset.theme = 'light';
     }
   </script>
-  <link rel="stylesheet" href="styles.css?v=65">
+  <link rel="stylesheet" href="styles.css?v=66">
   <title>КПЦ Симбирск — ориентировка</title>
 </head>
 <body class="auth-loading">
@@ -152,36 +152,49 @@
 </header>
 
 <main id="homeView" class="home-view" hidden>
-  <section class="home-overview">
+  <section class="home-hero">
+    <div class="home-hero-image home-hero-image-day" aria-hidden="true"></div>
+    <div class="home-hero-image home-hero-image-night" aria-hidden="true"></div>
+    <div class="home-hero-shade" aria-hidden="true"></div>
     <div class="home-welcome">
       <span id="homeUserRole" class="home-role"></span>
+      <p class="home-kicker">Кинологический поисковый центр</p>
       <h2>Добро пожаловать, <span id="homeUserName"></span></h2>
-      <p>Активные поиски, ориентировки и основные действия собраны на одной странице.</p>
+      <p class="home-hero-description">Ориентировки, активные поиски и рабочие инструменты собраны в одном месте.</p>
+      <div class="home-hero-actions" aria-label="Создание ориентировки">
+        <button id="homeCreateCaseBtn" class="home-hero-button home-hero-button-primary" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15h6"/></svg>
+          <span>Новая ориентировка</span>
+        </button>
+        <button id="homePdfBtn" class="home-hero-button home-hero-button-secondary" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15h8"/><path d="M8 11h2"/><path d="M8 19h5"/></svg>
+          <span>Создать PDF</span>
+        </button>
+      </div>
     </div>
-    <div class="home-quick-actions" aria-label="Быстрые действия">
-      <button id="homeCreateCaseBtn" class="home-action home-action-primary" type="button">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15h6"/></svg>
-        <span><strong>Новая ориентировка</strong><small>Создать запись с заметками</small></span>
-      </button>
-      <button id="homePdfBtn" class="home-action" type="button">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15h8"/><path d="M8 11h2"/><path d="M8 19h5"/></svg>
-        <span><strong>Создать PDF</strong><small>Открыть форму ориентировки</small></span>
-      </button>
+  </section>
+
+  <section class="home-quick-section" aria-labelledby="homeQuickTitle">
+    <div class="home-section-intro">
+      <h3 id="homeQuickTitle">Быстрые действия</h3>
+      <p>Переход к основным рабочим разделам</p>
+    </div>
+    <div class="home-quick-actions">
       <button id="homeActiveBtn" class="home-action" type="button" aria-expanded="false" aria-controls="homeActiveSection">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        <span><strong>Активный поиск</strong><small>ПСС и ПТП</small></span>
+        <span><strong>Активный поиск</strong><small>Текущие ПСС и ПТП</small><em>Открыть</em></span>
       </button>
       <button id="homeInfoBtn" class="home-action" type="button" aria-expanded="false" aria-controls="homeInfoSection">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7h.01"/></svg>
-        <span><strong>Инфопоиск</strong><small>Поиски в ожидании информации</small></span>
+        <span><strong>Инфопоиск</strong><small>Ожидают новой информации</small><em>Открыть</em></span>
       </button>
-      <button id="homeArchiveBtn" class="home-action home-action-wide" type="button" aria-expanded="false" aria-controls="homeArchiveSection">
+      <button id="homeArchiveBtn" class="home-action" type="button" aria-expanded="false" aria-controls="homeArchiveSection">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
-        <span><strong>Архив</strong><small>Открыть сохраненные поиски</small></span>
+        <span><strong>Архив</strong><small>Завершенные поиски</small><em>Открыть</em></span>
       </button>
-      <button id="homeWindRoseBtn" class="home-action home-action-wide home-wind-action" type="button">
+      <button id="homeWindRoseBtn" class="home-action home-wind-action" type="button">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/><path d="m14.8 9.2-1.6 4-4 1.6 1.6-4 4-1.6Z"/></svg>
-        <span><strong>Роза ветров</strong><small>Определить преобладающий ветер и направление переноса запаха</small></span>
+        <span><strong>Роза ветров</strong><small>Ветер и перенос запаха</small><em>Открыть</em></span>
       </button>
     </div>
   </section>
@@ -708,6 +721,6 @@
 
 <script src="vendor/jspdf.umd.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script type="module" src="app-v5.js?v=65"></script>
+<script type="module" src="app-v5.js?v=66"></script>
 </body>
 </html>
