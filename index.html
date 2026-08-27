@@ -18,7 +18,7 @@
       document.documentElement.dataset.theme = 'light';
     }
   </script>
-  <link rel="stylesheet" href="styles.css?v=64">
+  <link rel="stylesheet" href="styles.css?v=65">
   <title>КПЦ Симбирск — ориентировка</title>
 </head>
 <body class="auth-loading">
@@ -373,9 +373,10 @@
       <label>Брюки<input id="pants" placeholder="джинсы, тёмные"></label>
       <label>Обувь<input id="shoes" placeholder="кроссовки чёрные"></label>
       <label>При себе<input id="carrying" placeholder="чёрный рюкзак"></label>
+      <label class="full">Дополнительно<textarea id="additional" placeholder="другая важная информация об одежде и вещах"></textarea></label>
     </div></div>
     <div class="section"><h2>Фото</h2><div class="photo-picker">
-      <input id="photo" type="file" accept="image/jpeg,image/png,image/webp" capture="environment">
+      <input id="photo" type="file" accept="image/*">
       <img id="photoThumb" alt="" hidden>
       <p>После создания записи ориентировка и фото будут доступны подтвержденным пользователям сайта.</p>
     </div></div>
@@ -707,6 +708,6 @@
 
 <script src="vendor/jspdf.umd.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script type="module" src="app-v5.js?v=64"></script>
+<script type="module" src="app-v5.js?v=65"></script>
 </body>
 </html>
