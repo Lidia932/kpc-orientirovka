@@ -18,7 +18,7 @@
       document.documentElement.dataset.theme = 'light';
     }
   </script>
-  <link rel="stylesheet" href="styles.css?v=63">
+  <link rel="stylesheet" href="styles.css?v=64">
   <title>КПЦ Симбирск — ориентировка</title>
 </head>
 <body class="auth-loading">
@@ -524,6 +524,24 @@
   </div>
 </dialog>
 
+<dialog id="archiveResultDialog" class="app-dialog archive-result-dialog">
+  <div>
+    <div class="dialog-head">
+      <div><h2>Чем завершился поиск?</h2><p id="archiveResultText"></p></div>
+      <button id="archiveResultCloseBtn" class="icon-close" type="button" aria-label="Закрыть">×</button>
+    </div>
+    <div class="archive-result-actions">
+      <button id="archiveFoundAliveBtn" class="archive-result-choice found-alive" type="button">
+        <strong>НЖ</strong><span>Найден жив</span>
+      </button>
+      <button id="archiveFoundDeceasedBtn" class="archive-result-choice found-deceased" type="button">
+        <strong>НП</strong><span>Найден погибшим</span>
+      </button>
+    </div>
+    <button id="archiveResultCancelBtn" class="ghost dialog-cancel" type="button">Отмена</button>
+  </div>
+</dialog>
+
 <dialog id="confirmDialog" class="app-dialog">
   <div>
     <h2 id="confirmTitle"></h2>
@@ -689,6 +707,6 @@
 
 <script src="vendor/jspdf.umd.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script type="module" src="app-v5.js?v=63"></script>
+<script type="module" src="app-v5.js?v=64"></script>
 </body>
 </html>
