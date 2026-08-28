@@ -436,8 +436,8 @@
 
 /* Desktop workspace navigation. Mobile and compact tablet widths keep the top menu. */
 @media(min-width:1100px){
-  body.auth-ready{padding-left:340px}
-  .app-header{position:fixed;inset:0 auto 0 0;z-index:2200;display:flex;width:340px;height:100dvh;padding:22px 18px 18px;align-items:stretch;justify-content:flex-start;flex-direction:column;gap:15px;background:#f1eeeb;border:0;border-right:1px solid #d8d1cb;box-shadow:8px 0 26px #382d2410}
+  body.auth-ready{padding-left:382px}
+  .app-header{position:fixed;inset:0 auto 0 0;z-index:2200;display:flex;width:382px;height:100dvh;padding:22px 20px 18px;align-items:stretch;justify-content:flex-start;flex-direction:column;gap:15px;background:#f1eeeb;border:0;border-right:1px solid #d8d1cb;box-shadow:8px 0 26px #382d2410}
   .brand-area{display:grid;gap:13px;padding:0 7px 16px;border-bottom:1px solid #dcd5cf}
   .brand-block h1{color:#292725;font-size:22px}.brand-block p{color:#79736e;font-size:11px}
   .manage-users-button{width:100%;padding:9px 11px;text-align:left;background:transparent;color:#6e6863;border:1px solid transparent}
@@ -481,27 +481,41 @@
   :root[data-theme="dark"] .case-link.current{background:#3a3335;color:#f5e8e9;box-shadow:inset 3px 0 #d84a52}
 }
 
-/* Photo navigation cards shared by the desktop sidebar and compact menu. */
-#homeViewBtn{--menu-photo:url("assets/home/hero-day.webp")}
-#createViewBtn{--menu-photo:url("assets/home/hero-night.webp")}
-#windRoseViewBtn{--menu-photo:url("assets/home/tile-wind.webp")}
-.menu-group[data-status="active"]>summary{--menu-photo:url("assets/home/tile-active.webp")}
-.menu-group[data-status="info"]>summary{--menu-photo:url("assets/home/tile-info.webp")}
-.menu-group[data-status="archive"]>summary{--menu-photo:url("assets/home/tile-archive.webp")}
-#homeViewBtn,#createViewBtn,#windRoseViewBtn,.menu-group[data-status]>summary{position:relative;min-height:62px;margin:6px 0;padding:12px 13px;overflow:hidden;background-color:#f8f5f2;background-image:linear-gradient(90deg,#f8f5f2 0%,#f8f5f2 46%,rgba(248,245,242,.88) 61%,rgba(248,245,242,.20) 100%),var(--menu-photo);background-position:center,right center;background-size:cover,auto 100%;background-repeat:no-repeat;color:#332f2c;border:1px solid #dcd5cf;border-radius:8px;box-shadow:0 2px 7px #382d240d}
-#homeViewBtn:hover,#createViewBtn:hover,#windRoseViewBtn:hover,.menu-group[data-status]>summary:hover{background-color:#f2ece7;background-image:linear-gradient(90deg,#f2ece7 0%,#f2ece7 46%,rgba(242,236,231,.84) 61%,rgba(242,236,231,.12) 100%),var(--menu-photo);color:#292521;border-color:#cfc4bb}
-#homeViewBtn.current,#createViewBtn.current,#windRoseViewBtn.current,.menu-group[data-status].current>summary{background-color:#fff;background-image:linear-gradient(90deg,#fff 0%,#fff 46%,rgba(255,255,255,.86) 61%,rgba(255,255,255,.12) 100%),var(--menu-photo);color:#2f2926;border-color:#d1c7c0;box-shadow:inset 3px 0 #b9212a,0 3px 9px #382d2416}
-#homeViewBtn>.menu-section-icon,#createViewBtn>.menu-section-icon,#windRoseViewBtn>.menu-section-icon,.menu-group[data-status]>summary .menu-section-icon{width:34px;height:34px;flex:0 0 34px;padding:7px;background:#ffffffd9;border:1px solid #ffffffb8;border-radius:8px;stroke:#527483;box-shadow:0 1px 5px #352d2414}
-.menu-group[data-status]>summary .menu-section-title{gap:10px}
+/* Wide photo banners shared by the desktop sidebar and compact menu. */
+#homeViewBtn{--menu-photo:url("assets/home/menu/home-day.webp")}
+#createViewBtn{--menu-photo:url("assets/home/menu/create-day.webp")}
+#windRoseViewBtn{--menu-photo:url("assets/home/menu/wind-day.webp")}
+.menu-group[data-status="active"]>summary{--menu-photo:url("assets/home/menu/active-day.webp")}
+.menu-group[data-status="info"]>summary{--menu-photo:url("assets/home/menu/info-day.webp")}
+.menu-group[data-status="archive"]>summary{--menu-photo:url("assets/home/menu/archive-day.webp")}
+#homeViewBtn,#createViewBtn,#windRoseViewBtn,.menu-group[data-status]>summary{position:relative;display:flex;align-items:flex-end;min-height:88px;margin:8px 0;padding:12px 13px;overflow:hidden;background-color:#3a3a38;background-image:linear-gradient(180deg,rgba(17,18,18,.02) 10%,rgba(17,18,18,.20) 52%,rgba(17,18,18,.86) 100%),var(--menu-photo);background-position:center;background-size:cover;background-repeat:no-repeat;color:#fff;border:1px solid #d0c9c3;border-radius:8px;box-shadow:0 2px 7px #382d2414;text-shadow:0 1px 3px #000}
+#homeViewBtn:hover,#createViewBtn:hover,#windRoseViewBtn:hover,.menu-group[data-status]>summary:hover{background-image:linear-gradient(180deg,rgba(17,18,18,.01) 5%,rgba(17,18,18,.14) 48%,rgba(17,18,18,.80) 100%),var(--menu-photo);color:#fff;border-color:#a9a097;box-shadow:0 4px 12px #382d2424;transform:translateY(-1px)}
+#homeViewBtn.current,#createViewBtn.current,#windRoseViewBtn.current,.menu-group[data-status].current>summary{background-image:linear-gradient(180deg,rgba(17,18,18,.03) 5%,rgba(17,18,18,.20) 48%,rgba(17,18,18,.88) 100%),var(--menu-photo);color:#fff;border-color:#c64a51;box-shadow:inset 0 -3px #c52e37,0 4px 12px #382d2424}
+#homeViewBtn>.menu-section-icon,#createViewBtn>.menu-section-icon,#windRoseViewBtn>.menu-section-icon,.menu-group[data-status]>summary .menu-section-icon{width:34px;height:34px;flex:0 0 34px;padding:7px;background:#111b;border:1px solid #ffffff5e;border-radius:8px;stroke:#fff;box-shadow:0 1px 5px #0004}
+.menu-group[data-status]>summary .menu-section-title{align-items:center;gap:10px}
 
-:root[data-theme="dark"] #homeViewBtn{--menu-photo:url("assets/home/hero-night.webp")}
-:root[data-theme="dark"] #createViewBtn{--menu-photo:url("assets/home/hero-day.webp")}
-:root[data-theme="dark"] #homeViewBtn,:root[data-theme="dark"] #createViewBtn,:root[data-theme="dark"] #windRoseViewBtn,:root[data-theme="dark"] .menu-group[data-status]>summary{background-color:#272b2d;background-image:linear-gradient(90deg,#272b2d 0%,#272b2d 44%,rgba(39,43,45,.86) 59%,rgba(39,43,45,.16) 100%),var(--menu-photo);color:#edf0f2;border-color:#41484c;box-shadow:0 2px 8px #0003}
-:root[data-theme="dark"] #homeViewBtn:hover,:root[data-theme="dark"] #createViewBtn:hover,:root[data-theme="dark"] #windRoseViewBtn:hover,:root[data-theme="dark"] .menu-group[data-status]>summary:hover{background-color:#303538;background-image:linear-gradient(90deg,#303538 0%,#303538 44%,rgba(48,53,56,.82) 59%,rgba(48,53,56,.10) 100%),var(--menu-photo);color:#fff;border-color:#596268}
-:root[data-theme="dark"] #homeViewBtn.current,:root[data-theme="dark"] #createViewBtn.current,:root[data-theme="dark"] #windRoseViewBtn.current,:root[data-theme="dark"] .menu-group[data-status].current>summary{background-color:#34393c;background-image:linear-gradient(90deg,#34393c 0%,#34393c 44%,rgba(52,57,60,.82) 59%,rgba(52,57,60,.08) 100%),var(--menu-photo);color:#fff;border-color:#5b6267;box-shadow:inset 3px 0 #e05259,0 3px 10px #0004}
-:root[data-theme="dark"] #homeViewBtn>.menu-section-icon,:root[data-theme="dark"] #createViewBtn>.menu-section-icon,:root[data-theme="dark"] #windRoseViewBtn>.menu-section-icon,:root[data-theme="dark"] .menu-group[data-status]>summary .menu-section-icon{background:#273136e6;border-color:#60707980;stroke:#b8d5e0}
+:root[data-theme="dark"] #homeViewBtn{--menu-photo:url("assets/home/menu/home-night.webp")}
+:root[data-theme="dark"] #createViewBtn{--menu-photo:url("assets/home/menu/create-night.webp")}
+:root[data-theme="dark"] #windRoseViewBtn{--menu-photo:url("assets/home/menu/wind-night.webp")}
+:root[data-theme="dark"] .menu-group[data-status="active"]>summary{--menu-photo:url("assets/home/menu/active-night.webp")}
+:root[data-theme="dark"] .menu-group[data-status="info"]>summary{--menu-photo:url("assets/home/menu/info-night.webp")}
+:root[data-theme="dark"] .menu-group[data-status="archive"]>summary{--menu-photo:url("assets/home/menu/archive-night.webp")}
+:root[data-theme="dark"] #homeViewBtn,:root[data-theme="dark"] #createViewBtn,:root[data-theme="dark"] #windRoseViewBtn,:root[data-theme="dark"] .menu-group[data-status]>summary{background-color:#181a1b;background-image:linear-gradient(180deg,rgba(5,7,8,.08) 5%,rgba(5,7,8,.28) 50%,rgba(5,7,8,.91) 100%),var(--menu-photo);color:#fff;border-color:#454b4f;box-shadow:0 2px 8px #0004}
+:root[data-theme="dark"] #homeViewBtn:hover,:root[data-theme="dark"] #createViewBtn:hover,:root[data-theme="dark"] #windRoseViewBtn:hover,:root[data-theme="dark"] .menu-group[data-status]>summary:hover{background-image:linear-gradient(180deg,rgba(5,7,8,.04) 5%,rgba(5,7,8,.20) 48%,rgba(5,7,8,.84) 100%),var(--menu-photo);border-color:#677076}
+:root[data-theme="dark"] #homeViewBtn.current,:root[data-theme="dark"] #createViewBtn.current,:root[data-theme="dark"] #windRoseViewBtn.current,:root[data-theme="dark"] .menu-group[data-status].current>summary{background-image:linear-gradient(180deg,rgba(5,7,8,.06) 5%,rgba(5,7,8,.25) 48%,rgba(5,7,8,.92) 100%),var(--menu-photo);border-color:#db636a;box-shadow:inset 0 -3px #df4f57,0 4px 12px #0005}
+:root[data-theme="dark"] #homeViewBtn>.menu-section-icon,:root[data-theme="dark"] #createViewBtn>.menu-section-icon,:root[data-theme="dark"] #windRoseViewBtn>.menu-section-icon,:root[data-theme="dark"] .menu-group[data-status]>summary .menu-section-icon{background:#111c;border-color:#ffffff70;stroke:#fff}
 
-/* Keep the tile photographs as readable in the night theme as in the day theme. */
-:root[data-theme="dark"] .home-action{background-image:linear-gradient(90deg,#24272a 0%,#24272a 44%,rgba(36,39,42,.74) 57%,rgba(36,39,42,.10) 72%,transparent 100%),var(--home-tile)}
+/* Distinct, pre-cropped photographs keep the subject visible in both themes. */
+.home-action:nth-child(1){--home-tile:url("assets/home/menu/active-day.webp")}
+.home-action:nth-child(2){--home-tile:url("assets/home/menu/info-day.webp");background-position:center}
+.home-action:nth-child(3){--home-tile:url("assets/home/menu/archive-day.webp")}
+.home-action:nth-child(4){--home-tile:url("assets/home/menu/wind-day.webp")}
+:root[data-theme="dark"] .home-action:nth-child(1){--home-tile:url("assets/home/menu/active-night.webp")}
+:root[data-theme="dark"] .home-action:nth-child(2){--home-tile:url("assets/home/menu/info-night.webp")}
+:root[data-theme="dark"] .home-action:nth-child(3){--home-tile:url("assets/home/menu/archive-night.webp")}
+:root[data-theme="dark"] .home-action:nth-child(4){--home-tile:url("assets/home/menu/wind-night.webp")}
+:root[data-theme="dark"] .home-action{background-image:linear-gradient(90deg,#24272a 0%,#24272a 44%,rgba(36,39,42,.74) 57%,rgba(36,39,42,.10) 72%,transparent 100%),var(--home-tile);background-position:center;background-size:cover}
 :root[data-theme="dark"] .home-action:hover{background-image:linear-gradient(90deg,#30363a 0%,#30363a 44%,rgba(48,54,58,.72) 57%,rgba(48,54,58,.08) 72%,transparent 100%),var(--home-tile)}
 :root[data-theme="dark"] .home-action.expanded{background-image:linear-gradient(90deg,#344149 0%,#344149 44%,rgba(52,65,73,.72) 57%,rgba(52,65,73,.08) 72%,transparent 100%),var(--home-tile)}
+
+@media(max-width:1099px){#homeViewBtn,#createViewBtn,#windRoseViewBtn,.menu-group[data-status]>summary{min-height:82px}}
