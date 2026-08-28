@@ -18,7 +18,7 @@
       document.documentElement.dataset.theme = 'light';
     }
   </script>
-  <link rel="stylesheet" href="styles.css?v=70">
+  <link rel="stylesheet" href="styles.css?v=71">
   <title>КПЦ Симбирск — ориентировка</title>
 </head>
 <body class="auth-loading">
@@ -88,8 +88,13 @@
           <button id="logoutBtn" class="ghost small" type="button">Выйти</button>
         </div>
         <button id="installBtn" class="menu-install" type="button">
-          <span class="install-icon" aria-hidden="true">↓</span>
-          <span>Установить приложение</span>
+          <span class="install-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <rect x="3" y="3" width="18" height="14" rx="2"></rect>
+              <path d="M8 21h8M12 17v4M12 6v7m-3-3 3 3 3-3"></path>
+            </svg>
+          </span>
+          <span>Установить ярлык</span>
           <span class="install-arrow" aria-hidden="true">›</span>
         </button>
         <label class="menu-theme" for="themeToggle">
@@ -721,6 +726,6 @@
 
 <script src="vendor/jspdf.umd.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script type="module" src="app-v5.js?v=70"></script>
+<script type="module" src="app-v5.js?v=71"></script>
 </body>
 </html>
