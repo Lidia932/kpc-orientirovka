@@ -550,3 +550,26 @@
 :root[data-theme="dark"] .home-action.expanded{background-image:linear-gradient(90deg,#344149 0%,#344149 43%,rgba(52,65,73,.78) 53%,rgba(52,65,73,.12) 72%,transparent 100%),var(--home-tile)}
 
 @media(max-width:1099px){#homeViewBtn,#createViewBtn,#windRoseViewBtn,.menu-group[data-status]>summary{min-height:82px}}
+
+@media(max-width:520px){
+  .home-quick-actions{gap:10px}
+  .home-action{display:block;min-height:154px;padding:11px;background-image:linear-gradient(90deg,#fff 0%,#fff 42%,rgba(255,255,255,.90) 51%,rgba(255,255,255,.18) 68%,transparent 100%),var(--home-tile);background-position:center,var(--home-mobile-position,right center);background-size:cover,auto 100%}
+  .home-action>svg{display:block}
+  .home-action>span{width:59%;margin-top:9px;gap:3px}
+  .home-action strong{font-size:12px;line-height:1.18;overflow-wrap:normal}
+  .home-action small{min-height:0;font-size:9px;line-height:1.25}
+  .home-action em{margin-top:7px;font-size:9px}
+  .home-action:nth-child(1){--home-mobile-position:right -48px center}
+  .home-action:nth-child(2){--home-mobile-position:right -38px center}
+  .home-action:nth-child(3){--home-mobile-position:right -12px center}
+  .home-action:nth-child(4){--home-mobile-position:right -44px center}
+  .home-action:hover{background-image:linear-gradient(90deg,#f7f8f6 0%,#f7f8f6 42%,rgba(247,248,246,.88) 51%,rgba(247,248,246,.16) 68%,transparent 100%),var(--home-tile)}
+  .home-action.expanded{background-image:linear-gradient(90deg,#eef3f0 0%,#eef3f0 42%,rgba(238,243,240,.88) 51%,rgba(238,243,240,.16) 68%,transparent 100%),var(--home-tile)}
+  :root[data-theme="dark"] .home-action{background-image:linear-gradient(90deg,#24272a 0%,#24272a 42%,rgba(36,39,42,.86) 51%,rgba(36,39,42,.18) 68%,transparent 100%),var(--home-tile);background-position:center,var(--home-mobile-position,right center);background-size:cover,auto 100%}
+  :root[data-theme="dark"] .home-action:nth-child(1){--home-mobile-position:right -42px center}
+  :root[data-theme="dark"] .home-action:nth-child(2){--home-mobile-position:right -36px center}
+  :root[data-theme="dark"] .home-action:nth-child(3){--home-mobile-position:right -14px center}
+  :root[data-theme="dark"] .home-action:nth-child(4){--home-mobile-position:right -30px center}
+  :root[data-theme="dark"] .home-action:hover{background-image:linear-gradient(90deg,#24272a 0%,#24272a 42%,rgba(36,39,42,.86) 51%,rgba(36,39,42,.18) 68%,transparent 100%),var(--home-tile)}
+  :root[data-theme="dark"] .home-action.expanded{background-image:linear-gradient(90deg,#344149 0%,#344149 42%,rgba(52,65,73,.84) 51%,rgba(52,65,73,.16) 68%,transparent 100%),var(--home-tile)}
+}
