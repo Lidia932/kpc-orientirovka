@@ -1,11 +1,12 @@
 export const ARCHIVE_RESULTS={
   'НЖ':{short:'НЖ',label:'Найден жив',stamp:'НЖ — НАЙДЕН ЖИВ',className:'found-alive',color:'#197443'},
-  'НП':{short:'НП',label:'Найден погибшим',stamp:'НП — НАЙДЕН ПОГИБШИМ',className:'found-deceased',color:'#34393d'}
+  'НП':{short:'НП',label:'Найден погибшим',stamp:'НП — НАЙДЕН ПОГИБШИМ',className:'found-deceased',color:'#34393d'},
+  'ОТКАЗ':{short:'ОТКАЗ',label:'Отказ',stamp:'ОТКАЗ',className:'search-refused',color:'#9a5700'}
 };
 
 export function archiveResultForItem(item){
   if(ARCHIVE_RESULTS[item?.closureResult])return item.closureResult;
-  const match=String(item?.archiveFileName||'').match(/^[^—]+—\s*(НЖ|НП)\s*—/u);
+  const match=String(item?.archiveFileName||'').match(/^[^—]+—\s*(НЖ|НП|ОТКАЗ)\s*—/u);
   return match?.[1]||'';
 }
 
